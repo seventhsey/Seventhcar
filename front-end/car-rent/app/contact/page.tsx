@@ -35,12 +35,13 @@ const Contact = () => {
         const r = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/extras`);
         const raw = await r.json();
         setAvailableExtras(
-          (Array.isArray(raw) ? raw : []).map((e: any) => ({
-            id: Number(e.id),
-            name: e.name ?? `Extra ${e.id}`,
-            price: Number(e.price || 0),
-          }))
-        );
+  (Array.isArray(raw) ? raw : []).map((e: any) => ({
+    id: Number(e.id),
+    name: e.name ?? `Extra ${e.id}`,
+    price: Number(e.price || 0),
+    charge_type: e.charge_type === "once" ? "once" : "daily",
+  }))
+);
       } catch {
         setAvailableExtras([]);
       }
@@ -103,11 +104,12 @@ const Contact = () => {
         if (!id) continue;
         const found = availableExtras.find((a) => a.id === id);
         list.push({
-          extra_id: id,
-          price_at_booking: Number(found?.price || 0),
-          days: 0, // derived in modal
-          qty,
-        });
+  extra_id: id,
+  price_at_booking: Number(found?.price || 0),
+  days: 0, // derived in modal
+  qty,
+  charge_type: (found as any)?.charge_type === "once" ? "once" : "daily",
+} as any);
       }
       return list;
     };
@@ -163,10 +165,48 @@ const Contact = () => {
   const submitReservation = async (confirmed: BookingData) => {
     if (submitting) return;
 
-    if (!confirmed.firstName || !confirmed.lastName || !confirmed.email || !confirmed.phone) {
-      alert("Please fill in your name, email, and phone number.");
-      return;
-    }
+   const firstName = confirmed.firstName.trim();
+const lastName = confirmed.lastName.trim();
+const email = confirmed.email.trim().toLowerCase();
+const phone = confirmed.phone.trim();
+
+const isValidEmail = (email: string) => { //email proof check 
+  const clean = email.trim();
+
+  // Good practical email check:
+  // - one @
+  // - domain has a dot
+  // - no spaces
+  // - normal characters only
+  return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(clean);
+};
+
+const isValidPhone = (phone: string) => { //phone proof check
+  const clean = phone.trim();
+
+  // Allows:
+  // +248 2 123 456
+  // 2482123456
+  // 002482123456
+  // 2512345
+  // Blocks letters / nonsense
+  return /^\+?[0-9\s()-]{7,20}$/.test(clean);
+};
+
+if (!firstName || !lastName || !email || !phone) {
+  alert("Please fill in your name, email, and phone number.");
+  return;
+}
+
+if (!isValidEmail(email)) {
+  alert("Please enter a valid email address.");
+  return;
+}
+
+if (!isValidPhone(phone)) {
+  alert("Please enter a valid phone number.");
+  return;
+}
 
     if (!confirmed.plate_number) {
       alert("No vehicle selected. Please go back and choose a vehicle.");
@@ -182,9 +222,9 @@ const Contact = () => {
       setSubmitting(true);
 
       const payload = {
-        customer_name: `${confirmed.firstName} ${confirmed.lastName}`.trim(),
-        customer_email: confirmed.email,
-        customer_phone: confirmed.phone,
+        customer_name: `${firstName} ${lastName}`.trim(),
+customer_email: email,
+customer_phone: phone,
         flight_number: confirmed.flight_number || "",
         plate_number: confirmed.plate_number,
         start_date: confirmed.start_date,
@@ -195,11 +235,16 @@ const Contact = () => {
         status: "Pending",
         payment_option: "arrival",
         notes: confirmed.notes || "",
-        extras: (confirmed.extras || []).map((ex) => ({
-  extra_id: ex.extra_id,
-  days: ex.days || 1,
-  price_at_booking: Number(ex.price_at_booking || 0) * Number(ex.qty || 1),
-})),
+        extras: (confirmed.extras || []).map((ex: any) => {
+  const chargeType = ex.charge_type === "once" ? "once" : "daily";
+  const qty = Number(ex.qty || 1);
+
+  return {
+    extra_id: ex.extra_id,
+    days: chargeType === "once" ? 1 : ex.days || 1,
+    price_at_booking: Number(ex.price_at_booking || 0) * qty,
+  };
+}),
       };
 
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/reservations`, {
@@ -278,7 +323,7 @@ router.push(
                 <div className="relative">
                   <label className="block text-sm font-semibold mb-1">Phone</label>
                   <input
-                    type="text"
+                    type="tel"
                     className="w-full bg-gray-100 rounded-lg py-2 px-4 pl-10 outline-none"
                     placeholder="Enter phone number"
                     {...bind("phone")}

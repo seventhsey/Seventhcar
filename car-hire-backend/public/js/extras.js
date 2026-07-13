@@ -49,8 +49,9 @@ document.addEventListener("DOMContentLoaded", function() {
         col.innerHTML = `
           <div class="extras-card">
             <h5>${extra.name}</h5>
-            <p>Price: ${extra.price} EUR</p>
+            <p>Price: ${extra.price} EUR ${extra.charge_type === "once" ? "(one-time)" : "per day"}</p>
             <p>${extra.description || ""}</p>
+            <p><strong>Charge:</strong> ${extra.charge_type === "once" ? "One-time charge" : "Daily charge"}</p>
             <button class="btn btn-sm btn-primary mr-2" data-id="${extra.id}">Edit</button>
             <button class="btn btn-sm btn-danger" data-id="${extra.id}">Delete</button>
           </div>
@@ -74,6 +75,7 @@ document.addEventListener("DOMContentLoaded", function() {
       document.getElementById("extraName").value = extra.name;
       document.getElementById("extraPrice").value = extra.price;
       document.getElementById("extraDescription").value = extra.description || "";
+      document.getElementById("extraChargeType").value = extra.charge_type || "daily";
   
       $("#extrasModal").modal("show");
     }
@@ -96,6 +98,7 @@ document.addEventListener("DOMContentLoaded", function() {
       document.getElementById("extraName").value = "";
       document.getElementById("extraPrice").value = "";
       document.getElementById("extraDescription").value = "";
+      document.getElementById("extraChargeType").value = "daily";
     }
   
     function saveExtra() {
@@ -103,8 +106,9 @@ document.addEventListener("DOMContentLoaded", function() {
       const name = document.getElementById("extraName").value.trim();
       const price = parseFloat(document.getElementById("extraPrice").value || "0");
       const description = document.getElementById("extraDescription").value.trim();
+      const charge_type = document.getElementById("extraChargeType").value;
   
-      const payload = { name, price, description };
+      const payload = { name, price, description, charge_type };
   
       let url = "/api/extras";
       let method = "POST";

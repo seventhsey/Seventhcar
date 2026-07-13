@@ -4,36 +4,51 @@ const bcrypt = require('bcrypt');
 const session = require('express-session');
 const path = require('path');
 const multer = require('multer'); // For file uploads
+const cors = require('cors');
+require('dotenv').config();
 
 const app = express();
-const port = 3001;
+const port = process.env.PORT || 3001;
+app.set("trust proxy", 1);
 
 // Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(session({
-    secret: 'my-secret-key', 
-    resave: false,
-    saveUninitialized: true,
-    cookie: { secure: false } 
+
+const allowedOrigins = [
+  "http://localhost:3000",
+  process.env.FRONTEND_URL,
+].filter(Boolean);
+
+app.use(cors({
+  origin: allowedOrigins,
+  credentials: true,
 }));
 
+app.use(session({
+    secret: process.env.SESSION_SECRET || 'dev-secret-change-me',
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      secure: process.env.NODE_ENV === "production",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+    }
+}));
 // Serve static files
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads'))); // Serve uploaded images
 
 // Database connection
-require('dotenv').config();
 const db = mysql.createConnection({
-    host: 'db-mysql-fra1-06464-do-user-23578538-0.l.db.ondigitalocean.com',
-    port: 25060,
-    user: process.env.AIVEN_SERVICE_LOGIN,
-    password: process.env.AIVEN_SERVICE_PASSWORD,
-    database: 'SeventhCarHire',
-    ssl: {
-      rejectUnauthorized: false
-    }
-  });
+    host: process.env.DB_HOST,
+    port: Number(process.env.DB_PORT || 3306),
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME,
+    ssl: process.env.DB_SSL === "true"
+      ? { rejectUnauthorized: false }
+      : undefined,
+});
   
   db.connect((err) => {
     if (err) {
@@ -81,7 +96,13 @@ app.get("/bookingpage", (req, res) => {
   res.redirect(process.env.FRONTEND_URL || "http://localhost:3000");
 });
 
-
+//logout route
+app.get("/logout", (req, res) => {
+  req.session.destroy(() => {
+    res.clearCookie("connect.sid");
+    res.redirect("/login");
+  });
+});
 
 //---------------------------------------------------------------------------------------------------------------------------------------
 function formatDate(dateObj) {
@@ -128,7 +149,7 @@ function isAuthenticated(req, res, next) {
     if (req.session.userId) {
         next();
     } else {
-        res.status(401).redirect('/');
+        res.status(404).send("Not found");
     }
 }
 
@@ -151,16 +172,7 @@ const carsRoutes = require("./routes/cars");
 const reservationsRoutes = require("./routes/reservations");
 const extrasRoutes = require("./routes/extras");
 
-const cors = require('cors');
-const allowedOrigins = [
-  "http://localhost:3000",
-  process.env.FRONTEND_URL,
-].filter(Boolean);
 
-app.use(cors({
-  origin: allowedOrigins,
-  credentials: true,
-}));
 //-------------------------------------------------------------CALENDAR ---------------------------------------------------------------------------------------------
 app.use("/api/cars", carsRoutes(db, upload));
 app.use("/api/reservations", reservationsRoutes(db));

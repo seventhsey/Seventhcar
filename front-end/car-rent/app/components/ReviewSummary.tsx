@@ -6,14 +6,16 @@ import { Lock } from "lucide-react";
 export type ReservationExtra = {
   extra_id: number;
   days: number;                // derived in component
-  price_at_booking: number;    // per-day price
-  qty?: number;                // NEW: quantity from Extras step
+  price_at_booking: number;    // base price
+  qty?: number;                // quantity from Extras step
+  charge_type?: "daily" | "once";
 };
 
 export type AvailableExtra = {
   id: number;
   name: string;
-  price: number;               // per day
+  price: number;               // base price
+  charge_type?: "daily" | "once";
 };
 
 export type BookingData = {
@@ -177,11 +179,18 @@ export default function ReviewSummary({
 
   // extras total = Σ(price * qty * dayCount)
   const extrasTotal = useMemo(() => {
-    return (data.extras || []).reduce(
-      (sum, ex) => sum + (ex.price_at_booking || 0) * (ex.qty || 1) * dayCount,
-      0
-    );
-  }, [data.extras, dayCount]);
+  return (data.extras || []).reduce((sum, ex) => {
+    const qty = ex.qty || 1;
+    const price = ex.price_at_booking || 0;
+    const chargeType = ex.charge_type === "once" ? "once" : "daily";
+
+    if (chargeType === "once") {
+      return sum + price * qty;
+    }
+
+    return sum + price * qty * dayCount;
+  }, 0);
+}, [data.extras, dayCount]);
 
   // final estimate
   const estimated = useMemo(() => {
@@ -207,7 +216,13 @@ export default function ReviewSummary({
         ...d,
         extras: [
           ...(d.extras || []),
-          { extra_id: ex.id, price_at_booking: ex.price, days: dayCount || 1, qty: 1 },
+          {
+  extra_id: ex.id,
+  price_at_booking: ex.price,
+  days: ex.charge_type === "once" ? 1 : dayCount || 1,
+  qty: 1,
+  charge_type: ex.charge_type === "once" ? "once" : "daily",
+},
         ],
       }));
     }
@@ -309,7 +324,9 @@ export default function ReviewSummary({
                         <span className="text-sm">{ex.name}</span>
                       </label>
                       <div className="flex items-center gap-3">
-                        <span className="text-sm">€{ex.price.toFixed(2)}/day</span>
+                        <span className="text-sm">
+  €{ex.price.toFixed(2)} {ex.charge_type === "once" ? "one-time" : "/day"}
+</span>
                         {picked && (
                           <input
                             type="number"
@@ -348,9 +365,9 @@ export default function ReviewSummary({
     ...data,
     estimated_total: estimated,
     extras: data.extras.map((ex) => ({
-      ...ex,
-      days: dayCount,
-    })),
+  ...ex,
+  days: ex.charge_type === "once" ? 1 : dayCount,
+})),
   })
 }
             className="px-5 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700"

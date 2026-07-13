@@ -24,7 +24,7 @@ const Vehicles = () => {
       price_per_day_eur: car.price_per_day_eur,
       model: car.model, // (optional)
     }));
-    router.push("/");
+    router.push("/insurance");
   };
   useEffect(() => {
   let fetchUrl = `${process.env.NEXT_PUBLIC_API_URL}/cars`;

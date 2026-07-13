@@ -75,11 +75,7 @@ async function autoCalculatePrice() {
 
   let extrasTotal = 0;
 
-  document.querySelectorAll(".extra-checkbox:checked").forEach(chk => {
-    const priceEl = document.getElementById(`extra-price-${chk.value}`);
-    const perDayCost = Number(priceEl?.dataset?.price || 0);
-    extrasTotal += perDayCost * dayCount;
-  });
+  document.querySelectorAll
 
   const carPrice = dayCount * dailyRate * multiplier;
   const finalPrice = carPrice + extrasTotal;

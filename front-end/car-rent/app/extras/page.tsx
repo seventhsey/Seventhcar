@@ -42,7 +42,10 @@ const Extras = () => {
     let prevExtras: any[] = Array.isArray(reservation.extras) ? reservation.extras : [];
 
     // Remove any previously selected extra IDs that are in the displayed extras
-    prevExtras = prevExtras.filter((id: number) => !extras.find((e) => e.id === id));
+    prevExtras = prevExtras.filter((item: any) => {
+  const existingId = typeof item === "number" ? item : Number(item?.id);
+  return !extras.some((e) => Number(e.id) === existingId);
+});
 
     // Add the newly selected extras (with quantity > 0)
     Object.entries(quantities).forEach(([idStr, qty]) => {
@@ -76,7 +79,10 @@ const Extras = () => {
             </p>
             <div className="flex items-center justify-between">
               <div className="text-lg font-bold">
-                {extra.price} <span className="text-sm font-normal">EUR / day</span>
+                {extra.price}{" "}
+<span className="text-sm font-normal">
+  EUR {extra.charge_type === "once" ? "one-time" : "/ day"}
+</span>
               </div>
               <div className="flex items-center gap-2">
                 <button

@@ -31,13 +31,14 @@ module.exports = (db) => {
 
   // POST / CREATE
   router.post("/", (req, res) => {
-    const { name, price, description } = req.body;
+    const { name, price, description, charge_type } = req.body;
+    const safeChargeType = charge_type === "once" ? "once" : "daily";
     if (!name || price == null) {
       return res.status(400).json({ error: "Name and price are required" });
     }
     db.query(
-      "INSERT INTO extras (name, price, description) VALUES (?, ?, ?)",
-      [name, price, description || null],
+      "INSERT INTO extras (name, price, description, charge_type) VALUES (?, ?, ?, ?)",
+[name, price, description || null, safeChargeType],
       (err, result) => {
         if (err) {
           console.error("DB error (create extra):", err);
@@ -51,13 +52,14 @@ module.exports = (db) => {
   // PUT / UPDATE
   router.put("/:id", (req, res) => {
     const { id } = req.params;
-    const { name, price, description } = req.body;
+    const { name, price, description, charge_type } = req.body;
+    const safeChargeType = charge_type === "once" ? "once" : "daily";
     if (!name || price == null) {
       return res.status(400).json({ error: "Name and price are required" });
     }
     db.query(
       "UPDATE extras SET name = ?, price = ?, description = ? WHERE id = ?",
-      [name, price, description || null, id],
+[name, price, description || null, id],
       (err, result) => {
         if (err) {
           console.error("DB error (update extra):", err);
@@ -66,7 +68,7 @@ module.exports = (db) => {
         if (!result.affectedRows) {
           return res.status(404).json({ error: "Extra not found" });
         }
-        res.json({ id, name, price, description });
+        res.json({ id, name, price, description, charge_type: safeChargeType });
       }
     );
   });
