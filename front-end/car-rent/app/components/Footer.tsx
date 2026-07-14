@@ -70,7 +70,7 @@ const Footer: React.FC = () => {
         {/* Follow Us Section */}
         <div className="flex justify-between items-center flex-wrap gap-4">
           <div className="text-sm order-2 md:order-1">
-            © 2023 Doffay Car Rental | All Rights Reserved
+            © 2023 SeventhSeychelles Car Rental | All Rights Reserved
           </div>
           <div className="flex flex-col md:flex-row justify-center w-full md:w-fit mb-4 md:mb-0 gap-4 items-center order-1 md:order-2">
             <h3 className="text-sm font-bold">Follow Us</h3>
@@ -106,25 +106,7 @@ const Footer: React.FC = () => {
                 <Twitter size={24} />
               </a>
             </div>
-          </div>
-          <div className="text-sm flex items-center gap-3 order-3">
-            <div className="flex items-center gap-1">
-              <p>Developed by</p>{" "}
-              <Image
-                src={elatusLogo}
-                alt="elatus logo"
-                className="h-4 w-auto"
-              />
-            </div>
-            <div className="flex items-center gap-1">
-              <p>Powered by</p>{" "}
-              <Image
-                src={renteonLogo}
-                alt="renteon logo"
-                className="h-4 w-auto"
-              />
-            </div>
-          </div>
+          </div>  
         </div>
       </div>
     </div>

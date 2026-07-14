@@ -27,7 +27,7 @@ export default function ContactUs() {
                 <div className="ml-9 pt-2 text-[13px]">
                   <p className="text-gray-700 mb-1">Head Office</p>
                   <p className="text-gray-700 mb-1">
-                    Po Box 5044, Providence
+                    Unique building, 1st floor, Providence, 
                   </p>
                   <p className="text-gray-700">
                     Mahe, Victoria, Seychelles
