@@ -52,19 +52,19 @@ export default function ContactUs() {
                   <p className="text-gray-700 mb-1">
                     Info & Reservations{" "}
                     <a
-                      href="mailto:reservation@doffaycars.com"
+                      href="mailto:seventhseychelles@gmail.com"
                       className="text-blue-500"
                     >
-                      reservation@doffaycars.com
+                      seventhseychelles@gmail.com
                     </a>
                   </p>
                   <p className="text-gray-700">
                     Support Center{" "}
                     <a
-                      href="mailto:support@doffaycars.com"
+                      href="mailto:seventhseychelles@gmail.com"
                       className="text-blue-500"
                     >
-                      support@doffaycars.com
+                      seventhseychelles@gmail.com
                     </a>
                   </p>
                 </div>
@@ -87,10 +87,10 @@ export default function ContactUs() {
                   <p className="text-gray-700">
                     Info & Reservations{" "}
                   </p>
-                  <p className="text-blue-500 mb-1">+248 257 3196</p>
+                  <p className="text-blue-500 mb-1">+248 2502815</p>
                   <p className="text-gray-700">
                     Support Center{" "}
-                    <span className="text-blue-500">+248 257 3196</span>
+                    <span className="text-blue-500">+248 2502815</span>
                   </p>
                 </div>
               </div>
