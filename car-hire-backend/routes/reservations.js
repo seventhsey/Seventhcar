@@ -133,6 +133,112 @@ module.exports = (db) => {
     });
   });
 
+// POST /api/reservations/lookup
+  router.post("/lookup", (req, res) => {
+    const reservationId = Number(req.body.reservation_id);
+    const surname = String(req.body.surname || "").trim().toLowerCase();
+
+    if (!reservationId || !surname) {
+      return res.status(400).json({
+        success: false,
+        error: "Reservation ID and surname are required.",
+      });
+    }
+
+    db.query(
+      "SELECT * FROM reservations WHERE id = ?",
+      [reservationId],
+      (err, results) => {
+        if (err) {
+          console.error("Lookup reservation error:", err);
+          return res.status(500).json({
+            success: false,
+            error: "Server error looking up reservation.",
+          });
+        }
+
+        if (!results.length) {
+          return res.status(404).json({
+            success: false,
+            error: "Reservation not found.",
+          });
+        }
+
+        const reservation = results[0];
+
+        const nameParts = String(reservation.customer_name || "")
+          .trim()
+          .toLowerCase()
+          .split(/\s+/);
+
+        const storedSurname = nameParts[nameParts.length - 1] || "";
+
+        if (storedSurname !== surname) {
+          return res.status(404).json({
+            success: false,
+            error: "Reservation not found.",
+          });
+        }
+
+        if (["Cancelled", "Completed"].includes(reservation.status)) {
+          return res.status(409).json({
+            success: false,
+            error: "This reservation can no longer be edited online.",
+          });
+        }
+
+        if (reservation.start_date) reservation.start_date = formatDate(reservation.start_date);
+        if (reservation.end_date) reservation.end_date = formatDate(reservation.end_date);
+
+        db.query(
+          `
+          SELECT
+            re.extra_id,
+            e.name,
+            e.charge_type,
+            e.price AS current_price,
+            re.days,
+            re.price_at_booking
+          FROM reservation_extras re
+          LEFT JOIN extras e
+            ON re.extra_id = e.id
+          WHERE re.reservation_id = ?
+          `,
+          [reservationId],
+          (extrasErr, extras) => {
+            if (extrasErr) {
+              console.error("Lookup extras error:", extrasErr);
+              return res.status(500).json({
+                success: false,
+                error: "Server error loading reservation extras.",
+              });
+            }
+
+            db.query(
+              "SELECT * FROM cars WHERE plate_number = ?",
+              [reservation.plate_number],
+              (carErr, carRows) => {
+                if (carErr) {
+                  console.error("Lookup car error:", carErr);
+                  return res.status(500).json({
+                    success: false,
+                    error: "Server error loading reservation car.",
+                  });
+                }
+
+                res.json({
+                  success: true,
+                  reservation,
+                  extras,
+                  car: carRows[0] || null,
+                });
+              }
+            );
+          }
+        );
+      }
+    );
+  });
   // GET /api/reservations/:id
   router.get("/:id", (req, res) => {
     const reservationId = req.params.id;

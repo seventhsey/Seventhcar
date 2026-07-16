@@ -165,7 +165,7 @@ const ReservationForm = () => {
                     <input
                       className="w-full p-3 pl-6 h-[65px] rounded-md focus:outline-none bg-[#f8f8f8]"
                       value={pickupDate}
-                      onChange={() => {}}
+                      onChange={() => { }}
                     />
                   }
                 />
@@ -210,7 +210,7 @@ const ReservationForm = () => {
                     <input
                       className="w-full p-3 pl-10 h-[65px] rounded-md focus:outline-none bg-[#f8f8f8]"
                       value={returnDate}
-                      onChange={() => {}}
+                      onChange={() => { }}
                     />
                   }
                 />
@@ -274,7 +274,10 @@ const ReservationForm = () => {
           </div>
         </div>
 
-        <div className="bg-white rounded-b-2xl flex items-center gap-2 cursor-pointer md:hidden text-[13px]">
+        <div
+          onClick={() => router.push("/manage-reservation")}
+          className="bg-white rounded-b-2xl flex items-center gap-2 cursor-pointer md:hidden text-[13px]"
+        >
           <Image src={editIcon} alt="edit icon" />
           <span>Edit reservation</span>
         </div>
@@ -283,7 +286,10 @@ const ReservationForm = () => {
       {/* Bottom Navigation */}
       <div className="max-w-7xl mx-auto w-full text-[13px]">
         <div className="flex justify-between items-center w-full">
-          <div className="bg-white px-4 py-2 rounded-b-2xl md:flex items-center gap-2 cursor-pointer hidden">
+          <div
+            onClick={() => router.push("/manage-reservation")}
+            className="bg-white px-4 py-2 rounded-b-2xl md:flex items-center gap-2 cursor-pointer hidden"
+          >
             <Image src={editIcon} alt="edit icon" />
             <span>Edit reservation</span>
           </div>

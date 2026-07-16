@@ -211,6 +211,43 @@ module.exports = (db, upload) => {
 });
 
   // ------------------------------------------
+  // 7) GET /api/cars/available-for-edit
+  //    GET ?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD&excludeReservationId=123
+  // ------------------------------------------
+  router.get("/available-for-edit", (req, res) => {
+    const { startDate, endDate, excludeReservationId } = req.query;
+
+    if (!startDate || !endDate) {
+      return res.status(400).json({ error: "Missing startDate or endDate" });
+    }
+
+    const excludedId = Number(excludeReservationId || 0);
+
+    const sql = `
+      SELECT *
+      FROM cars
+      WHERE plate_number NOT IN (
+        SELECT plate_number
+        FROM reservations
+        WHERE id <> ?
+          AND status IN ('Pending', 'Approved')
+          AND start_date <= ?
+          AND end_date >= ?
+      )
+      ORDER BY car_name
+    `;
+
+    db.query(sql, [excludedId, endDate, startDate], (err, results) => {
+      if (err) {
+        console.error("GET /api/cars/available-for-edit error:", err);
+        return res.status(500).json({ error: "Server error checking availability" });
+      }
+
+      res.json(results);
+    });
+  });
+
+  // ------------------------------------------
   // 7) GET /api/cars/:plateNumber
   // ------------------------------------------
   router.get("/:plateNumber", (req, res) => {
