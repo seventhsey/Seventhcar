@@ -86,9 +86,6 @@ const NavBar: React.FC = () => {
             {[
               { label: "Home", path: "/" },
               { label: "Vehicles", path: "/vehicles" },
-              { label: "Offers", path: "/offers" },
-              { label: "News", path: "/news" },
-              { label: "Transfers", path: "/transfers" },
               { label: "FAQ", path: "/faq" }
             ].map((item) => (
               <Link
@@ -116,8 +113,6 @@ const NavBar: React.FC = () => {
                     // You can update these with real paths later if you make pages
                     { label: "Book Now", path: "/book" },
                     { label: "About us", path: "/about" },
-                    { label: "Offices", path: "/offices" },
-                    { label: "Terms and Conditions", path: "/terms" },
                     { label: "Contact", path: "/contact" }
                   ].map((item) => (
                     <Link

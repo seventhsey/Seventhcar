@@ -83,17 +83,17 @@ const ReservationForm = () => {
 
   return (
     <div
-      className="w-full bg-cover bg-center flex flex-col items-center justify-center transition-all duration-500 px-4 md:px-0 py-24 md:py-28"
+      className="w-full max-w-full overflow-x-hidden bg-cover bg-center flex flex-col items-center justify-center transition-all duration-500 px-4 md:px-0 py-24 md:py-28"
       style={{ backgroundImage: `url(${images[bgIndex]})` }}
       onClick={handleBackgroundClick}
     >
       <div className="max-w-4xl mx-auto text-center">
-        <h3 className="md:text-[50px] text-[28px] text-white font-bold md:mt-20 mb-24 md:mb-0">
+        <h3 className="text-[34px] leading-tight md:text-[50px] text-white font-bold md:mt-20 mb-24 md:mb-0 max-w-full break-words">
           Rent A Car in Seychelles
         </h3>
       </div>
       <div
-        className="max-w-7xl w-full mx-auto bg-white py-4 md:py-8 md:px-10 px-6 rounded-t-xl rounded-br-xl md:rounded-br-none backdrop-blur-md bg-opacity-90 flex flex-col"
+        className="w-full max-w-[calc(100vw-2rem)] md:max-w-7xl mx-auto bg-white py-4 md:py-8 md:px-10 px-6 rounded-t-xl rounded-br-xl md:rounded-br-none backdrop-blur-md bg-opacity-90 flex flex-col"
         onClick={handleFormClick}
       >
         {/* Island Selection */}
@@ -284,7 +284,7 @@ const ReservationForm = () => {
       </div>
 
       {/* Bottom Navigation */}
-      <div className="max-w-7xl mx-auto w-full text-[13px]">
+      <div className="w-full max-w-[calc(100vw-2rem)] md:max-w-7xl mx-auto text-[13px]">
         <div className="flex justify-between items-center w-full">
           <div
             onClick={() => router.push("/manage-reservation")}
