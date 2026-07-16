@@ -59,6 +59,22 @@ const Vehicles = () => {
     }
   })
   .then((data) => {
+  const apiBaseUrl = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/api\/?$/, "");
+
+  const mappedCars = data.map((car: any) => ({
+    model: car.car_name,
+    category: "",
+    image: car.car_image_url
+      ? `${apiBaseUrl}/uploads/${car.car_image_url}`
+      : "/no-image.png",
+    fuel: car.fuel_type,
+    doors: car.door_count,
+    price_per_day_eur: car.price,
+    plate_number: car.plate_number,
+  }));
+
+  setCars(mappedCars);
+}).then((data) => {
     const mappedCars = data.map((car: any) => ({
       model: car.car_name,
       category: "",
