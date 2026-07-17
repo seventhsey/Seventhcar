@@ -74,20 +74,7 @@ const Vehicles = () => {
   }));
 
   setCars(mappedCars);
-}).then((data) => {
-    const mappedCars = data.map((car: any) => ({
-      model: car.car_name,
-      category: "",
-      image: car.car_image_url
-        ? `http://localhost:3001/uploads/${car.car_image_url}`
-        : "/no-image.png",
-      fuel: car.fuel_type,
-      doors: car.door_count,
-      price_per_day_eur: car.price,
-      plate_number: car.plate_number,
-    }));
-    setCars(mappedCars);
-  })
+})
   .catch((err) => {
     console.error("Failed to fetch cars:", err);
   });
@@ -105,12 +92,11 @@ const Vehicles = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 p-6">
         {cars.map((car, index) => (
           <div
-            key={index}
-            className="relative group overflow-hidden rounded-3xl bg-white transition"
-          >
+  key={index}
+  className="relative group overflow-hidden rounded-3xl bg-white transition h-[430px] flex flex-col"
+>
             {/* Hover background layer using Tailwind */}
-            <div className="absolute top-0 left-0 w-full h-[230px] z-0 rounded-3xl bg-gradient-to-br from-[#f8f8f8] to-[#f8f8f8] group-hover:from-[#59ace3] group-hover:to-[#0066ff] transition-all duration-400 ease-in-out"></div>
-            
+<div className="absolute top-0 left-0 w-full h-[260px] z-0 rounded-3xl bg-gradient-to-br from-[#f8f8f8] to-[#f8f8f8] group-hover:from-[#59ace3] group-hover:to-[#0066ff] transition-all duration-400 ease-in-out"></div>            
             {/* Card content */}
             <div className="relative z-10 flex flex-col h-full">
               <div className="px-6 py-4 rounded-t-3xl transition-colors duration-300">
@@ -126,18 +112,18 @@ const Vehicles = () => {
               </div>
 
               {/* Car image */}
-              <div className="flex justify-center">
-                <Image
-                  width={300}
-                  height={200}
-                  src={car.image}
-                  alt={car.model}
-                  className="object-contain relative top-6"
-                />
-              </div>
+              <div className="relative h-[190px] w-full px-6">
+  <Image
+    fill
+    src={car.image}
+    alt={car.model}
+    sizes="(max-width: 768px) 100vw, 33vw"
+    className="object-contain p-3"
+  />
+</div>
 
               {/* Features */}
-              <div className="flex justify-around text-sm text-black py-2 z-10 relative">
+              <div className="flex justify-around text-sm text-black py-2 z-10 relative mt-auto">
                 <div className="flex flex-col items-center">
                   <Image src={fuelIcon} alt="fuel icon" />
                   <span>{car.fuel}</span>
@@ -153,7 +139,7 @@ const Vehicles = () => {
               </div>
 
               {/* Footer */}
-              <div className="flex justify-between items-center px-6 py-4 bg-white">
+              <div className="flex justify-between items-center px-6 py-4 bg-white min-h-[78px]">
                 <div>
                   <p className="text-[17px] font-bold">
                     {Number(car.price_per_day_eur) === 0
