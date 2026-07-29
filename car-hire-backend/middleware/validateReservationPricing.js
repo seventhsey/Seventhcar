@@ -69,17 +69,22 @@ module.exports = function validateReservationPricing(db) {
 
     for (const item of requestedExtras) {
       const id = Number(item.extra_id ?? item.id);
-      const qty = Number(item.qty ?? 1);
-
-      if (!Number.isInteger(id) || id <= 0 || !Number.isInteger(qty) || qty < 1) {
+      if (!Number.isInteger(id) || id <= 0) {
         return res.status(400).json({ success: false, error: "Invalid extra selection." });
+      }
+
+      if (item.qty !== undefined) {
+        const explicitQty = Number(item.qty);
+        if (!Number.isInteger(explicitQty) || explicitQty < 1) {
+          return res.status(400).json({ success: false, error: "Invalid extra quantity." });
+        }
       }
 
       if (requestedById.has(id)) {
         return res.status(400).json({ success: false, error: "The same extra cannot be added twice." });
       }
 
-      requestedById.set(id, qty);
+      requestedById.set(id, item);
     }
 
     const ids = [...requestedById.keys()];
@@ -128,9 +133,18 @@ module.exports = function validateReservationPricing(db) {
 
         for (const extra of extraRows) {
           const id = Number(extra.id);
-          const qty = requestedById.get(id) || 1;
-          const maxQty = getMaxQuantity(extra);
+          const requested = requestedById.get(id) || {};
+          const unitPrice = Number(extra.price || 0);
 
+          let qty = Number(requested.qty);
+          if (!Number.isInteger(qty) || qty < 1) {
+            const submittedPrice = Number(requested.price_at_booking || 0);
+            qty = unitPrice > 0 && submittedPrice > 0
+              ? Math.max(1, Math.round(submittedPrice / unitPrice))
+              : 1;
+          }
+
+          const maxQty = getMaxQuantity(extra);
           if (qty > maxQty) {
             return res.status(400).json({
               success: false,
@@ -138,7 +152,6 @@ module.exports = function validateReservationPricing(db) {
             });
           }
 
-          const unitPrice = Number(extra.price || 0);
           const chargeType = extra.charge_type === "once" ? "once" : "daily";
           const chargedDays = chargeType === "once" ? 1 : dayCount;
 
