@@ -22,7 +22,7 @@ const AboutAndCom = () => {
       place: 'Google Review',
     },
     {
-      com: 'Staff was super friendly with emphasis to Deen. He was waiting for us on time after our arrival and he was flexible and punctual for the drop off of the car. He reaches you in advance via WhatsApp. The car pick up and return was very fast. Car was in excellent condition. We were lucky to get an upgrade during your rental. Certainly I recommend Doffay Car Rental for Seychelles, from the beginning to the end very smooth process.',
+      com: 'Staff was super friendly with emphasis to Deen. He was waiting for us on time after our arrival and he was flexible and punctual for the drop off of the car. He reaches you in advance via WhatsApp. The car pick up and return was very fast. Car was in excellent condition. We were lucky to get an upgrade during our rental. The entire process, from beginning to end, was very smooth.',
       name: 'Bruno Q',
       place: 'Tripadvisor',
     },
@@ -45,10 +45,10 @@ const AboutAndCom = () => {
             <h1 className="text-[30px] md:text-[36px] md:mb-[45px] font-bold mb-6 text-left">Why Choose Us?</h1>
             <h3 className="text-lg font-bold mb-[7px]">About Us</h3>
             <p className="text-[13px] mb-[25px]">
-              At Doffay Car Rental, we provide top-notch car rental services in Seychelles, focusing on the beautiful islands of Mahe and Praslin. With a diverse fleet of vehicles to suit all needs and budgets, we aim to make your travel experience seamless and enjoyable.
+              We provide reliable car rental services across Mahé and Praslin, with a varied fleet designed to suit different travel needs and budgets. Our goal is to make every rental straightforward, comfortable, and stress-free from booking to return.
               <br />
               <br />
-              Our friendly team is dedicated to exceptional customer service, offering flexible rental options and competitive prices. Explore the breathtaking landscapes of Seychelles at your own pace. Book your adventure with us today!
+              Our team offers friendly support, flexible rental options, and competitive pricing so you can explore Seychelles at your own pace. Choose the right vehicle, plan your journey, and enjoy the islands with confidence.
             </p>
             <button className="p-[13px_25px_13px_35px] bg-[#f8f8f8] text-[13px] font-bold text-[#17191c] rounded hover:bg-[#1c7fec] hover:text-white transition relative cursor-pointer">
               <div className="absolute p-1.5 bg-white text-[#1c7fec] rounded-full -left-3 top-[7px]">
@@ -61,10 +61,9 @@ const AboutAndCom = () => {
 
         <div className="max-w-[610px] relative mt-[50px]">
           <h1 className="text-[18px] font-bold mb-5 text-center">What Others Are Saying</h1>
-          {/* Circular gradient background */}
-      <div className="bg-gradient-to-l to-[#1cb4ec] from-[#1c78ec] h-[232px] w-[232px] absolute z-[-10] rounded-full top-[35%] -left-[35%] md:-left-[22%]" />
-      <div className="bg-gradient-to-l to-[#1cb4ec] from-[#1c78ec] h-[130px] w-[130px] absolute z-[0] rounded-full left-[30%] md:left-[40%] -bottom-10 md:-bottom-12" />
-      <div className="bg-gradient-to-l to-[#1cb4ec] from-[#1c78ec] h-[87px] w-[87px] absolute z-[-10] rounded-full -top-2 md:-top-4 -right-[6%] md:right-6" />
+          <div className="bg-gradient-to-l to-[#1cb4ec] from-[#1c78ec] h-[232px] w-[232px] absolute z-[-10] rounded-full top-[35%] -left-[35%] md:-left-[22%]" />
+          <div className="bg-gradient-to-l to-[#1cb4ec] from-[#1c78ec] h-[130px] w-[130px] absolute z-[0] rounded-full left-[30%] md:left-[40%] -bottom-10 md:-bottom-12" />
+          <div className="bg-gradient-to-l to-[#1cb4ec] from-[#1c78ec] h-[87px] w-[87px] absolute z-[-10] rounded-full -top-2 md:-top-4 -right-[6%] md:right-6" />
           <Swiper
             modules={[Navigation]}
             navigation={{
