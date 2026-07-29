@@ -19,9 +19,19 @@ function query(db, sql, params = []) {
   });
 }
 
+function normalizeTime(value) {
+  const clean = String(value || "").trim().slice(0, 5);
+  if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(clean)) {
+    throw new PricingError("Invalid pickup or return time.");
+  }
+  return clean;
+}
+
 function calculateBookingDays(startDate, startTime, endDate, endTime) {
-  const startMoment = new Date(`${startDate}T${startTime}:00`);
-  const endMoment = new Date(`${endDate}T${endTime}:00`);
+  const cleanStartTime = normalizeTime(startTime);
+  const cleanEndTime = normalizeTime(endTime);
+  const startMoment = new Date(`${startDate}T${cleanStartTime}:00`);
+  const endMoment = new Date(`${endDate}T${cleanEndTime}:00`);
 
   if (
     Number.isNaN(startMoment.getTime()) ||
@@ -35,7 +45,7 @@ function calculateBookingDays(startDate, startTime, endDate, endTime) {
   const endDay = new Date(`${endDate}T00:00:00`);
   let days = Math.floor((endDay - startDay) / 86400000) + 1;
 
-  if (endTime > startTime) days += 1;
+  if (cleanEndTime > cleanStartTime) days += 1;
   return Math.max(1, days);
 }
 
@@ -92,20 +102,42 @@ function parseRequestedExtras(items) {
   return byId;
 }
 
-function resolveQuantity(requested, extra) {
+function resolveQuantity(requested, extra, maxQuantity) {
   const explicit = Number(requested.qty);
   if (Number.isInteger(explicit) && explicit >= 1) return explicit;
 
-  // Backward compatibility for older frontend payloads that multiplied the
-  // price before sending instead of including qty explicitly.
+  // Compatibility with older frontend payloads that encoded quantity by
+  // multiplying price_at_booking instead of sending qty explicitly.
   const unitPrice = Number(extra.price || 0);
   const submittedPrice = Number(requested.price_at_booking || 0);
 
   if (unitPrice > 0 && submittedPrice > 0) {
-    return Math.max(1, Math.round(submittedPrice / unitPrice));
+    const ratio = submittedPrice / unitPrice;
+    const roundedRatio = Math.max(1, Math.round(ratio));
+
+    if (Math.abs(ratio - roundedRatio) < 0.001) {
+      if (roundedRatio <= maxQuantity) return roundedRatio;
+
+      // One intermediate frontend version multiplied an already multiplied
+      // price a second time. Recover 2 and 3 seat selections safely.
+      const squareRoot = Math.sqrt(roundedRatio);
+      if (Number.isInteger(squareRoot) && squareRoot <= maxQuantity) {
+        return squareRoot;
+      }
+    }
+
+    return roundedRatio;
   }
 
   return 1;
+}
+
+function asMoney(value, label) {
+  const amount = Number(value);
+  if (!Number.isFinite(amount) || amount < 0) {
+    throw new PricingError(`${label} is invalid.`, 500);
+  }
+  return amount;
 }
 
 async function calculateReservationQuote(db, payload = {}) {
@@ -185,14 +217,14 @@ async function calculateReservationQuote(db, payload = {}) {
   for (const id of ids) {
     const extra = extrasById.get(id);
     const requested = requestedById.get(id) || {};
-    const quantity = resolveQuantity(requested, extra);
     const maxQuantity = getMaxQuantity(extra);
+    const quantity = resolveQuantity(requested, extra, maxQuantity);
 
     if (quantity > maxQuantity) {
       throw new PricingError(`${extra.name} is limited to ${maxQuantity}.`);
     }
 
-    const unitPrice = Number(extra.price || 0);
+    const unitPrice = asMoney(extra.price, `${extra.name} price`);
     const chargeType = extra.charge_type === "once" ? "once" : "daily";
     const chargedDays = chargeType === "once" ? 1 : dayCount;
     const lineTotal = Number((unitPrice * quantity * chargedDays).toFixed(2));
@@ -218,7 +250,7 @@ async function calculateReservationQuote(db, payload = {}) {
   }
 
   const vehicle = carRows[0];
-  const dailyRate = Number(vehicle.price || 0);
+  const dailyRate = asMoney(vehicle.price, "Vehicle daily rate");
   const multiplier = getTierMultiplier(dayCount);
   const vehicleTotal = Number((dayCount * dailyRate * multiplier).toFixed(2));
   const total = Number((vehicleTotal + extrasTotal).toFixed(2));
