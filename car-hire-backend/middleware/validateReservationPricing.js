@@ -19,6 +19,20 @@ module.exports = function validateReservationPricing(db) {
       req.body.total_price = result.quote.total;
       req.calculatedQuote = result.quote;
 
+      // Existing reservation routes return their own success object. Enrich
+      // that response with the exact quote used for the database write.
+      const originalJson = res.json.bind(res);
+      res.json = (body) => {
+        if (body && body.success) {
+          return originalJson({
+            ...body,
+            total: result.quote.total,
+            quote: result.quote,
+          });
+        }
+        return originalJson(body);
+      };
+
       next();
     } catch (error) {
       if (!(error instanceof PricingError)) {
