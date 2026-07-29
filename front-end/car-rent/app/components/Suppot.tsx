@@ -7,13 +7,10 @@ import { Pagination } from 'swiper/modules';
 import 'swiper/css';
 import 'swiper/css/pagination';
 
-// Image imports (Assuming these are in the public directory)
 import img1 from '@/public/Assets/ico_key.svg';
 import img2 from '@/public/Assets/ico_time-clock.svg';
 import img3 from '@/public/Assets/ico_return-car.svg';
-import img4 from '@/public/Assets/doffay-logo-silouete.svg';
 
-// Define TypeScript interface for support card
 interface SupportCard {
   title: string;
   img: string;
@@ -44,7 +41,6 @@ export const SupportCenter: React.FC = () => {
         </a>
       </div>
 
-      {/* Desktop View: Flex layout */}
       <div className="hidden md:flex gap-6">
         {supportCards.map((card, index) => (
           <div
@@ -52,7 +48,6 @@ export const SupportCenter: React.FC = () => {
             className="rounded-[16px] p-[13px_20px] flex flex-col items-start justify-between bg-gradient-to-r from-[#f8f8f8] to-[#f8f8f8] hover:from-[#1cb4ec] hover:to-[#1c7fec] hover:text-white transition-shadow h-[155px] w-[210px] relative overflow-hidden"
           >
             <Image src={card.img} alt={card.title} className="w-[50px] h-[50px]" />
-            <Image src={img4} alt="doffay logo" className="absolute top-7 left-14" />
             <span className="text-base font-bold">{card.title}</span>
             <div className="absolute p-1.5 bg-white text-gray-400 rounded-full -right-2 top-[60px]">
               <ChevronRight size={24} />
@@ -61,7 +56,6 @@ export const SupportCenter: React.FC = () => {
         ))}
       </div>
 
-      {/* Mobile View: Swiper Slider */}
       <div className="md:hidden">
         <Swiper
           modules={[Pagination]}
@@ -76,7 +70,6 @@ export const SupportCenter: React.FC = () => {
                 className="rounded-[16px] p-[13px_20px] flex flex-col items-start justify-between bg-gradient-to-r from-[#f8f8f8] to-[#f8f8f8] hover:from-[#1cb4ec] hover:to-[#1c7fec] hover:text-white transition-shadow h-[155px] max-w-[210px] relative overflow-hidden"
               >
                 <Image src={card.img} alt={card.title} className="w-[50px] h-[50px]" />
-                <Image src={img4} alt="doffay logo" className="absolute top-7 left-10" />
                 <span className="text-base font-bold">{card.title}</span>
                 <div className="absolute p-1.5 bg-white text-gray-400 rounded-full -right-2 top-[60px]">
                   <ChevronRight size={24} />
