@@ -3,6 +3,7 @@ frontend/car-rent/node_modules/
 **/node_modules/
 .next/
 frontend/car-rent/.next/
+car-hire-backend/.env
 **/.next/
 .env.local
 *.log
