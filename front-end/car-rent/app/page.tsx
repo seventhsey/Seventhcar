@@ -5,7 +5,6 @@ import AboutAndCom from "./components/AboutAndCom";
 import BusinessOffer from "./components/BusinessOffer";
 import ContactUs from "./components/ContactUs";
 import Exta from "./components/Exta";
-import InformBox from "./components/InformBox";
 import ReservationForm from "./components/ReservationForm";
 import SpecialOffers from "./components/SpecialOffer";
 import { SupportCenter } from "./components/Suppot";
@@ -19,8 +18,7 @@ export default function Home() {
   }, []);
 
   return (
-    <div>
-      <InformBox />
+    <div className="overflow-x-hidden">
       <ReservationForm />
       <Image
         src={carImg}
