@@ -171,11 +171,12 @@ const upload = multer({ storage });
 const carsRoutes = require("./routes/cars");         
 const reservationsRoutes = require("./routes/reservations");
 const extrasRoutes = require("./routes/extras");
+const validateReservationPricing = require("./middleware/validateReservationPricing");
 
 
 //-------------------------------------------------------------CALENDAR ---------------------------------------------------------------------------------------------
 app.use("/api/cars", carsRoutes(db, upload));
-app.use("/api/reservations", reservationsRoutes(db));
+app.use("/api/reservations", validateReservationPricing(db), reservationsRoutes(db));
 app.use("/api/extras", extrasRoutes(db));
 
 
