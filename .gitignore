@@ -4,6 +4,9 @@ frontend/car-rent/node_modules/
 .next/
 frontend/car-rent/.next/
 **/.next/
+.env
+**/.env
 .env.local
+**/.env.local
 *.log
 .env4
