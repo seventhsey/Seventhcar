@@ -4,31 +4,19 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Cars - Seventh Car Hire</title>
-
-  <!-- Bootstrap CSS -->
-  <link
-    href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
-    rel="stylesheet"
-  />
-
-  <!-- Modal and Admin Card Styles -->
+  <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet" />
   <link rel="stylesheet" href="/css/car-modal.css" />
   <link rel="stylesheet" href="/css/car-cards-admin.css" />
-  
-
-  <!-- Loader Script (fetches and displays cars) -->
+  <link rel="stylesheet" href="/css/ui-feedback.css" />
   <script src="/js/cars-loader.js"></script>
 </head>
 <body>
-<!-- Navigation Bar (fetched from partial) -->
 <div id="navbar-placeholder"></div>
 <script>
   fetch("/partials/navbar.html")
     .then(response => response.text())
     .then(html => {
       document.getElementById("navbar-placeholder").innerHTML = html;
-
-      // Now that navbar HTML is in the DOM, load navbar.js
       const script = document.createElement("script");
       script.src = "/js/navbar.js";
       document.body.appendChild(script);
@@ -36,54 +24,36 @@
     .catch(error => console.error("Error loading navbar:", error));
 </script>
 
-
-
-  <!-- Full-width Main Container -->
-  <div id="mainContainer" class="container-fluid px-0" style="margin-top: 100px;">
-    <!-- Add New Car Button -->
-    <div class="d-flex justify-content-start mb-3 px-3">
-      <button class="btn btn-success" id="addCarBtn">Add New Car</button>
-    </div>
-
-    <!-- Car Cards Container -->
-    <div id="carContainer" class="row mx-0 px-3">
-      <!-- Car cards will dynamically load here in "admin" mode -->
-    </div>
+<div id="mainContainer" class="container-fluid px-0" style="margin-top: 100px;">
+  <div class="d-flex justify-content-start mb-3 px-3">
+    <button class="btn btn-success" id="addCarBtn">Add New Car</button>
   </div>
+  <div id="carContainer" class="row mx-0 px-3"></div>
+</div>
 
-  <!-- Modal Placeholder (fetched from partial) -->
-  <div id="carModal-placeholder"></div>
-  <script>
-    fetch("/partials/car-modal.html")
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error("Failed to fetch car modal HTML.");
-        }
-        return response.text();
-      })
-      .then((data) => {
-        document.getElementById("carModal-placeholder").innerHTML = data;
-        initializeModalScript(); // Initialize the modal logic
-      })
-      .catch((error) => console.error("Error loading car-modal.html:", error));
-  </script>
+<div id="carModal-placeholder"></div>
+<script>
+  fetch("/partials/car-modal.html")
+    .then((response) => {
+      if (!response.ok) throw new Error("Failed to fetch car modal HTML.");
+      return response.text();
+    })
+    .then((data) => {
+      document.getElementById("carModal-placeholder").innerHTML = data;
+      initializeModalScript();
+    })
+    .catch((error) => console.error("Error loading car-modal.html:", error));
+</script>
 
-  <!-- jQuery, Bootstrap JS -->
-  <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
-  <script
-    src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js"
-  ></script>
-
-  <!-- Modal Script -->
-  <script src="/js/car-modal-script.js"></script>
-
-  <!-- Inline Script to Load Cars in Admin Mode -->
-  <script>
-    document.addEventListener("DOMContentLoaded", () => {
-      const carContainer = document.getElementById("carContainer");
-      // Load cars in "admin" mode
-      loadCars(carContainer, "admin");
-    });
-  </script>
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="/js/ui-feedback.js"></script>
+<script src="/js/car-modal-script.js"></script>
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const carContainer = document.getElementById("carContainer");
+    loadCars(carContainer, "admin");
+  });
+</script>
 </body>
 </html>
