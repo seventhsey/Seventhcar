@@ -14,13 +14,37 @@ app.set("trust proxy", 1);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-const allowedOrigins = [
-  "http://localhost:3000",
-  process.env.FRONTEND_URL,
-].filter(Boolean);
+const configuredFrontendOrigin = String(process.env.FRONTEND_URL || "")
+  .trim()
+  .replace(/\/$/, "");
+
+function isAllowedOrigin(origin) {
+  // Requests made server-to-server, curl, health checks, etc. do not send Origin.
+  if (!origin) return true;
+
+  const normalized = origin.replace(/\/$/, "");
+
+  if (configuredFrontendOrigin && normalized === configuredFrontendOrigin) {
+    return true;
+  }
+
+  // Local development can move to another port when 3000 is already occupied.
+  if (/^http:\/\/localhost:\d+$/.test(normalized)) return true;
+  if (/^http:\/\/127\.0\.0\.1:\d+$/.test(normalized)) return true;
+
+  return false;
+}
 
 app.use(cors({
-  origin: allowedOrigins,
+  origin(origin, callback) {
+    if (isAllowedOrigin(origin)) {
+      callback(null, true);
+      return;
+    }
+
+    console.warn(`Blocked CORS origin: ${origin}`);
+    callback(new Error("Origin not allowed by CORS"));
+  },
   credentials: true,
 }));
 
@@ -61,6 +85,10 @@ app.get("/", (req, res) => {
     service: "Seventh Car Hire Backend API",
     status: "online",
   });
+});
+
+app.get("/api/health", (req, res) => {
+  res.json({ success: true, status: "online" });
 });
 
 app.get("/login", (req, res) => {
