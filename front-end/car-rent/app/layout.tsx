@@ -3,6 +3,7 @@ import { Poppins } from "next/font/google";
 import "./globals.css";
 import NavBar from "./components/NavBar";
 import Footer from "./components/Footer";
+import FeedbackProvider from "./components/FeedbackProvider";
 
 const poppins = Poppins({
   variable: "--font-poppins",
@@ -24,6 +25,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={poppins.variable}>
+        <FeedbackProvider />
         <div className="fixed top-0 right-0 left-0 z-50 flex justify-center">
           <NavBar />
         </div>
