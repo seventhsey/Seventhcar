@@ -2,7 +2,7 @@ import { ExternalLink, MapPin, Navigation } from "lucide-react";
 
 const GOOGLE_MAPS_PIN = "https://maps.app.goo.gl/BenGYBpuRSKBxe7W9";
 const EMBED_MAP =
-  "https://www.google.com/maps?q=Providence,+Mahe,+Seychelles&z=14&output=embed";
+  "https://www.google.com/maps?q=Unique+Building,+Providence,+Mahe,+Seychelles&z=16&output=embed";
 
 export default function LocationMap() {
   return (
@@ -18,9 +18,9 @@ export default function LocationMap() {
               Find us in Providence
             </h2>
             <p className="mt-3 text-gray-600 max-w-2xl text-sm md:text-base leading-relaxed">
-              We are based in the Providence area on Mahé. The map below shows the
-              surrounding district; click anywhere on it to open our exact location
-              in Google Maps.
+              Our office is at Unique Building in Providence, Mahé. The map below
+              shows the office location, and clicking it opens the exact Google Maps
+              pin for directions.
             </p>
           </div>
 
@@ -45,22 +45,22 @@ export default function LocationMap() {
           <div className="relative h-[330px] md:h-[460px] w-full">
             <iframe
               src={EMBED_MAP}
-              title="Providence, Mahé map"
+              title="Unique Building, Providence, Mahé map"
               loading="lazy"
               referrerPolicy="no-referrer-when-downgrade"
-              className="absolute inset-0 h-full w-full border-0 pointer-events-none grayscale-[10%] group-hover:scale-[1.01] transition-transform duration-500"
+              className="absolute inset-0 h-full w-full border-0 pointer-events-none group-hover:scale-[1.01] transition-transform duration-500"
             />
 
-            <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent pointer-events-none" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/10 via-transparent to-transparent pointer-events-none" />
 
             <div className="absolute left-4 right-4 bottom-4 md:left-6 md:right-auto md:bottom-6 flex items-center gap-3 rounded-2xl bg-white/95 backdrop-blur px-4 py-3 shadow-lg border border-white/70">
               <div className="w-10 h-10 rounded-full bg-[#1c7fec] text-white flex items-center justify-center shrink-0">
                 <MapPin className="w-5 h-5" />
               </div>
               <div className="min-w-0">
-                <p className="font-bold text-gray-900">Providence, Mahé</p>
+                <p className="font-bold text-gray-900">Unique Building, Providence</p>
                 <p className="text-xs md:text-sm text-gray-600 truncate">
-                  Click to open exact Google Maps pin
+                  Click to open the exact Google Maps pin
                 </p>
               </div>
               <ExternalLink className="w-4 h-4 text-[#1c7fec] ml-2 shrink-0" />
