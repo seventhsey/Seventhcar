@@ -103,7 +103,6 @@ export default function ManageReservationPage() {
   const [surname, setSurname] = useState("");
 
   const [reservation, setReservation] = useState<Reservation | null>(null);
-  const [editToken, setEditToken] = useState("");
 
   const [allExtras, setAllExtras] = useState<Extra[]>([]);
   const [selectedExtras, setSelectedExtras] = useState<SelectedExtra[]>([]);
@@ -259,7 +258,6 @@ export default function ManageReservationPage() {
       const customer = splitName(loadedReservation.customer_name || "");
 
       setReservation(loadedReservation);
-      setEditToken(result.edit_token || "");
       setCurrentCar(result.car || null);
       setSelectedPlate(loadedReservation.plate_number);
 
@@ -388,7 +386,8 @@ export default function ManageReservationPage() {
         notes: notes.trim(),
         extras: selectedExtras.map((ex) => ({
           extra_id: ex.extra_id,
-          qty: ex.qty,
+          days: ex.charge_type === "once" ? 1 : dayCount,
+          price_at_booking: ex.price * ex.qty,
         })),
       };
 
@@ -398,7 +397,6 @@ export default function ManageReservationPage() {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${editToken}`,
           },
           body: JSON.stringify(payload),
         }
@@ -412,7 +410,7 @@ export default function ManageReservationPage() {
 
       router.push(
         `/confirmation?id=${reservation.id}&total=${Number(
-          result.total_price || 0
+          newTotal || 0
         ).toFixed(2)}&mode=updated`
       );
     } catch (err) {
