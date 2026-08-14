@@ -350,7 +350,7 @@ export default function ManageReservationPage() {
         throw new Error(result.error || "Reservation could not be updated.");
       }
 
-      router.push(`/confirmation?id=${reservation.id}&mode=updated`);
+      router.push(`/confirmation?id=${reservation.id}&total=${encodeURIComponent(String(result.total))}&mode=updated`);
     } catch (error) {
       alert(error instanceof Error ? error.message : "Could not update reservation.");
     } finally {
