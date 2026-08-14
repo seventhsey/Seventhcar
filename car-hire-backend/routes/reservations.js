@@ -120,6 +120,10 @@ module.exports = (db) => {
       query += " WHERE " + conditions.join(" AND ");
     }
 
+    // Show reservations with the latest pickup date/time first by default.
+    // The ID keeps the result deterministic when dates and times are identical.
+    query += " ORDER BY start_date DESC, start_time DESC, id DESC";
+
     db.query(query, queryParams, (err, results) => {
       if (err) {
         console.error("Database error:", err);
