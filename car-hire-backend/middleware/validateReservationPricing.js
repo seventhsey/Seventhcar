@@ -10,9 +10,44 @@ module.exports = function validateReservationPricing(db) {
 
     if (!isCreate && !isUpdate) return next();
 
+    let lockConnection = null;
+    let lockReleased = false;
+
+    async function releaseVehicleLock() {
+      if (!lockConnection || lockReleased) return;
+      lockReleased = true;
+      try {
+        await lockConnection.query("SELECT RELEASE_LOCK(?)", [
+          `reservation:${String(req.body?.plate_number || "")}`,
+        ]);
+      } catch (releaseError) {
+        console.error("Could not release reservation lock:", releaseError);
+      } finally {
+        lockConnection.release();
+      }
+    }
+
     try {
-      const result = await calculateReservationQuote(db, req.body || {});
       const payload = req.body || {};
+      lockConnection = await db.promise().getConnection();
+      const lockName = `reservation:${String(payload.plate_number || "")}`;
+      const [lockRows] = await lockConnection.query(
+        "SELECT GET_LOCK(?, 5) AS acquired",
+        [lockName]
+      );
+
+      if (Number(lockRows[0]?.acquired) !== 1) {
+        await releaseVehicleLock();
+        return res.status(409).json({
+          success: false,
+          error: "This vehicle is being booked by another customer. Please try again.",
+        });
+      }
+
+      res.once("finish", releaseVehicleLock);
+      res.once("close", releaseVehicleLock);
+
+      const result = await calculateReservationQuote(db, payload);
       const excludedReservationId = isUpdate
         ? Number(req.path.slice(1))
         : 0;
@@ -67,6 +102,10 @@ module.exports = function validateReservationPricing(db) {
 
       next();
     } catch (error) {
+      if (lockConnection && !lockReleased && !res.headersSent) {
+        await releaseVehicleLock();
+      }
+
       if (!(error instanceof PricingError)) {
         console.error("Reservation pricing validation failed:", error);
       }
