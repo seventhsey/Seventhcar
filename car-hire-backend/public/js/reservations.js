@@ -215,6 +215,12 @@ function calculateBookingDays(startDateStr, startTimeStr, endDateStr, endTimeStr
   function clearSortHeaderStyles() {
     sortableHeaders.forEach(h => h.classList.remove("sort-asc","sort-desc"));
   }
+  // Reflect the default newest-first sorting in the Start Date header.
+  const defaultSortHeader = sortableHeaders.find(
+    h => h.getAttribute("data-sort-key") === sortKey
+  );
+  if (defaultSortHeader) defaultSortHeader.classList.add("sort-desc");
+
   sortableHeaders.forEach(h => {
     h.addEventListener("click", async () => {
       const key = h.getAttribute("data-sort-key"); // start_date or end_date
