@@ -64,6 +64,7 @@ export default function ManageReservationPage() {
   const [reservationId, setReservationId] = useState("");
   const [surname, setSurname] = useState("");
   const [reservation, setReservation] = useState<Reservation | null>(null);
+  const [editToken, setEditToken] = useState("");
 
   const [allExtras, setAllExtras] = useState<Extra[]>([]);
   const [selectedExtras, setSelectedExtras] = useState<SelectedExtra[]>([]);
@@ -228,6 +229,7 @@ export default function ManageReservationPage() {
       const loaded: Reservation = result.reservation;
       const customer = splitName(loaded.customer_name);
       setReservation(loaded);
+      setEditToken(result.edit_token || "");
       setCurrentCar(result.car || null);
       setSelectedPlate(loaded.plate_number);
       setFirstName(customer.firstName);
@@ -319,7 +321,10 @@ export default function ManageReservationPage() {
       setSaving(true);
       const response = await fetch(`${apiUrl}/reservations/${reservation.id}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${editToken}`,
+        },
         body: JSON.stringify({
           customer_name: `${firstName.trim()} ${lastName.trim()}`,
           customer_email: email.trim().toLowerCase(),
