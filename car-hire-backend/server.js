@@ -3,6 +3,7 @@ const mysql = require('mysql2');
 const bcrypt = require('bcrypt');
 const session = require('express-session');
 const path = require('path');
+const fs = require('fs');
 const multer = require('multer');
 const cors = require('cors');
 const crypto = require('crypto');
@@ -56,20 +57,7 @@ app.use(cors({
   credentials: true,
 }));
 
-app.use(session({
-  secret: effectiveSessionSecret,
-  resave: false,
-  saveUninitialized: false,
-  cookie: {
-    secure: process.env.NODE_ENV === "production",
-    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-  }
-}));
-
-app.use(express.static(path.join(__dirname, 'public')));
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-
-const db = mysql.createConnection({
+const db = mysql.createPool({
   host: process.env.DB_HOST,
   port: Number(process.env.DB_PORT || 3306),
   user: process.env.DB_USER,
@@ -78,15 +66,105 @@ const db = mysql.createConnection({
   ssl: process.env.DB_SSL === "true"
     ? { rejectUnauthorized: false }
     : undefined,
+  connectionLimit: 10,
 });
 
-db.connect((err) => {
-  if (err) {
-    console.error('Error connecting to the database:', err);
+db.getConnection((error, connection) => {
+  if (error) {
+    console.error("Error connecting to the database:", error);
     return;
   }
-  console.log('Connected to the database!');
+  connection.release();
+  console.log("Connected to the database!");
 });
+
+class MySqlSessionStore extends session.Store {
+  constructor(pool) {
+    super();
+    this.pool = pool;
+    this.pool.query(
+      `CREATE TABLE IF NOT EXISTS web_sessions (
+        session_id VARCHAR(128) PRIMARY KEY,
+        expires_at BIGINT UNSIGNED NOT NULL,
+        data LONGTEXT NOT NULL,
+        INDEX idx_web_sessions_expires (expires_at)
+      )`,
+      (error) => {
+        if (error) console.error("Could not initialize session storage:", error);
+      }
+    );
+  }
+
+  get(sessionId, callback) {
+    this.pool.query(
+      "SELECT expires_at, data FROM web_sessions WHERE session_id = ?",
+      [sessionId],
+      (error, rows) => {
+        if (error) return callback(error);
+        if (!rows.length) return callback(null, null);
+
+        if (Number(rows[0].expires_at) <= Date.now()) {
+          return this.destroy(sessionId, () => callback(null, null));
+        }
+
+        try {
+          return callback(null, JSON.parse(rows[0].data));
+        } catch (parseError) {
+          return callback(parseError);
+        }
+      }
+    );
+  }
+
+  set(sessionId, sessionData, callback = () => {}) {
+    const expiresAt = sessionData.cookie?.expires
+      ? new Date(sessionData.cookie.expires).getTime()
+      : Date.now() + (24 * 60 * 60 * 1000);
+
+    this.pool.query(
+      `INSERT INTO web_sessions (session_id, expires_at, data)
+       VALUES (?, ?, ?)
+       ON DUPLICATE KEY UPDATE
+         expires_at = VALUES(expires_at),
+         data = VALUES(data)`,
+      [sessionId, expiresAt, JSON.stringify(sessionData)],
+      callback
+    );
+  }
+
+  destroy(sessionId, callback = () => {}) {
+    this.pool.query(
+      "DELETE FROM web_sessions WHERE session_id = ?",
+      [sessionId],
+      callback
+    );
+  }
+
+  touch(sessionId, sessionData, callback = () => {}) {
+    this.set(sessionId, sessionData, callback);
+  }
+}
+
+app.use(session({
+  store: new MySqlSessionStore(db),
+  secret: effectiveSessionSecret,
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    secure: process.env.NODE_ENV === "production",
+    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+    httpOnly: true,
+    maxAge: 24 * 60 * 60 * 1000,
+  }
+}));
+
+const uploadDirectory = path.resolve(
+  process.env.UPLOAD_DIR || path.join(__dirname, "uploads")
+);
+fs.mkdirSync(uploadDirectory, { recursive: true });
+
+app.use(express.static(path.join(__dirname, 'public')));
+app.use('/uploads', express.static(uploadDirectory));
 
 app.get("/", (req, res) => {
   res.json({
@@ -229,7 +307,7 @@ function protectReservationApi(req, res, next) {
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, 'uploads/');
+    cb(null, uploadDirectory);
   },
   filename: (req, file, cb) => {
     cb(null, Date.now() + '-' + file.originalname);
