@@ -312,37 +312,26 @@ document.addEventListener("DOMContentLoaded", function () {
   // 5) Approve/Reject Reservation (Update Status)
   // -------------------------------------------------------------------
   function updateReservationStatus(id, newStatus) {
-    fetch(`/api/reservations/${id}`)
-      .then(response => response.json())
-      .then(reservation => {
-        const updatedReservation = {
-          customer_name: reservation.customer_name,
-          customer_email: reservation.customer_email,
-          customer_phone: reservation.customer_phone,
-          flight_number: reservation.flight_number,
-          notes: reservation.notes || "",
-          plate_number: reservation.plate_number,
-          start_date: reservation.start_date,
-          start_time: reservation.start_time,
-          end_date: reservation.end_date,
-          end_time: reservation.end_time,
-          total_price: reservation.total_price,
-          status: newStatus
-        };
-
-        fetch(`/api/reservations/${id}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(updatedReservation)
-        })
-          .then(response => response.json())
-          .then(() => {
-            $("#reservationModal").modal("hide");
-            window.fetchReservations();
-          })
-          .catch(error => console.error("Error updating reservation:", error));
+    fetch(`/api/reservations/${id}/status`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status: newStatus })
+    })
+      .then(async response => {
+        const result = await response.json();
+        if (!response.ok) {
+          throw new Error(result.error || "Could not update reservation status.");
+        }
+        return result;
       })
-      .catch(error => console.error("Error fetching reservation data:", error));
+      .then(() => {
+        $("#reservationModal").modal("hide");
+        window.fetchReservations();
+      })
+      .catch(error => {
+        console.error("Error updating reservation status:", error);
+        alert(error.message);
+      });
   }
 
   // -------------------------------------------------------------------
