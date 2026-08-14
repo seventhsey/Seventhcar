@@ -237,7 +237,7 @@ export default function Contact() {
 
       localStorage.removeItem("pendingReservation");
       localStorage.removeItem("selectedCar");
-      router.push(`/confirmation?id=${result.reservationId}`);
+      router.push(`/confirmation?id=${result.reservationId}&total=${encodeURIComponent(String(result.total))}`);
     } catch (error) {
       console.error("Reservation submit error:", error);
       alert(
