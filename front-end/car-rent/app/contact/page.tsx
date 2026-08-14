@@ -241,8 +241,7 @@ customer_phone: phone,
 
   return {
     extra_id: ex.extra_id,
-    days: chargeType === "once" ? 1 : ex.days || 1,
-    price_at_booking: Number(ex.price_at_booking || 0) * qty,
+    qty,
   };
 }),
       };
@@ -265,7 +264,7 @@ customer_phone: phone,
 localStorage.removeItem("selectedCar");
 
 router.push(
-  `/confirmation?id=${result.reservationId}&total=${confirmed.estimated_total}`
+  `/confirmation?id=${result.reservationId}&total=${result.total_price}`
 );
 
     
