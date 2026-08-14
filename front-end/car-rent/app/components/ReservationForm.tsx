@@ -27,10 +27,21 @@ const ReservationForm = () => {
   const router = useRouter();
   const [selectedExtras, setSelectedExtras] = useState<number[]>([]);
 
-  // Helper: for react-datepicker to string and back
-  const parseDate = (val: string) => val ? new Date(val) : null;
-  const formatDate = (date: Date | null) =>
-    date ? date.toISOString().split("T")[0] : "";
+  // Keep calendar dates in local time. Converting local midnight through
+  // toISOString() can shift Seychelles dates to the previous UTC day.
+  const parseDate = (value: string) => {
+    if (!value) return null;
+    const [year, month, day] = value.split("-").map(Number);
+    return year && month && day ? new Date(year, month - 1, day) : null;
+  };
+
+  const formatDate = (date: Date | null) => {
+    if (!date) return "";
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
 
   const handleBackgroundClick = () => {
     setBgIndex((prev) => (prev + 1) % images.length)
