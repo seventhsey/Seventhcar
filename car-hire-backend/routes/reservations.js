@@ -432,6 +432,40 @@ module.exports = (db, { createReservationEditToken } = {}) => {
       }
     );
   });
+  // PATCH /api/reservations/:id/status (admin session required)
+  router.patch("/:id/status", (req, res) => {
+    const reservationId = Number(req.params.id);
+    const allowedStatuses = new Set([
+      "Pending",
+      "Approved",
+      "Completed",
+      "Cancelled",
+    ]);
+    const status = String(req.body.status || "");
+
+    if (!Number.isInteger(reservationId) || reservationId <= 0) {
+      return res.status(400).json({ error: "Invalid reservation ID." });
+    }
+    if (!allowedStatuses.has(status)) {
+      return res.status(400).json({ error: "Invalid reservation status." });
+    }
+
+    db.query(
+      "UPDATE reservations SET status = ? WHERE id = ?",
+      [status, reservationId],
+      (error, result) => {
+        if (error) {
+          console.error("Server error updating reservation status:", error);
+          return res.status(500).json({ error: "Server error updating reservation status." });
+        }
+        if (!result.affectedRows) {
+          return res.status(404).json({ error: "Reservation not found." });
+        }
+        return res.json({ success: true, reservationId, status });
+      }
+    );
+  });
+
   // POST /api/reservations
   router.post("/", async (req, res) => {
     const data = req.body;
@@ -440,6 +474,17 @@ module.exports = (db, { createReservationEditToken } = {}) => {
     try {
       const { totalPrice, pricedExtras } =
         await calculateAuthoritativePrice(data);
+
+      const allowedStatuses = new Set([
+        "Pending",
+        "Approved",
+        "Completed",
+        "Cancelled",
+      ]);
+      const creationStatus =
+        req.session.userId && allowedStatuses.has(String(data.status || ""))
+          ? String(data.status)
+          : "Pending";
 
       connection = db.promise();
       await connection.beginTransaction();
@@ -460,7 +505,7 @@ module.exports = (db, { createReservationEditToken } = {}) => {
           data.end_date,
           String(data.end_time).slice(0, 5),
           totalPrice,
-          "Pending",
+          creationStatus,
           String(data.notes || "").trim(),
         ]
       );
