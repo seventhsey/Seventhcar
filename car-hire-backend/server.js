@@ -165,6 +165,10 @@ fs.mkdirSync(uploadDirectory, { recursive: true });
 
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/uploads', express.static(uploadDirectory));
+if (uploadDirectory !== path.join(__dirname, "uploads")) {
+  // Existing repository images remain readable after a persistent volume is mounted.
+  app.use('/uploads', express.static(path.join(__dirname, "uploads")));
+}
 
 app.get("/", (req, res) => {
   res.json({
