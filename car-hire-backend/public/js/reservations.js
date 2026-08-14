@@ -26,8 +26,8 @@ document.addEventListener("DOMContentLoaded", function () {
   let renderVersion = 0;
   let statusFilter = "";
   let searchTerm = "";
-  let sortKey = null;
-  let sortDir = "asc";
+  let sortKey = "start_date";
+  let sortDir = "desc";
 
   const tableBody = document.getElementById("reservationsTable");
   const searchInput = document.getElementById("searchReservations");
@@ -188,6 +188,11 @@ document.addEventListener("DOMContentLoaded", function () {
   function clearSortHeaderStyles() {
     sortableHeaders.forEach(h => h.classList.remove("sort-asc","sort-desc"));
   }
+
+  const defaultSortHeader = sortableHeaders.find(
+    h => h.getAttribute("data-sort-key") === sortKey
+  );
+  if (defaultSortHeader) defaultSortHeader.classList.add("sort-desc");
 
   sortableHeaders.forEach(h => {
     h.addEventListener("click", async () => {
