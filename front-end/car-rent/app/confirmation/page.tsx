@@ -32,7 +32,7 @@ function ConfirmationContent() {
           <p>
             <strong>Payment:</strong> Pay on arrival
           </p>
-          {hasValidTotal && (
+          {hasValidTotal && total !== null && (
             <p>
               <strong>Total:</strong> €{total.toFixed(2)}
             </p>
