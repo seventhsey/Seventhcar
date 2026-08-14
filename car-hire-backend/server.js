@@ -5,10 +5,18 @@ const session = require('express-session');
 const path = require('path');
 const multer = require('multer');
 const cors = require('cors');
+const crypto = require('crypto');
 require('dotenv').config();
 
 const app = express();
 const port = process.env.PORT || 3001;
+const sessionSecret = process.env.SESSION_SECRET;
+
+if (process.env.NODE_ENV === "production" && !sessionSecret) {
+  throw new Error("SESSION_SECRET is required in production.");
+}
+
+const effectiveSessionSecret = sessionSecret || "local-development-only-secret";
 app.set("trust proxy", 1);
 
 app.use(express.json());
@@ -49,7 +57,7 @@ app.use(cors({
 }));
 
 app.use(session({
-  secret: process.env.SESSION_SECRET || 'dev-secret-change-me',
+  secret: effectiveSessionSecret,
   resave: false,
   saveUninitialized: false,
   cookie: {
@@ -154,11 +162,69 @@ app.post('/login', (req, res) => {
 });
 
 function isAuthenticated(req, res, next) {
-  if (req.session.userId) {
-    next();
-  } else {
-    res.status(404).send("Not found");
+  if (req.session.userId) return next();
+  return res.status(401).json({ error: "Authentication required." });
+}
+
+function createReservationEditToken(reservationId) {
+  const expiresAt = Date.now() + (30 * 60 * 1000);
+  const payload = `${reservationId}.${expiresAt}`;
+  const signature = crypto
+    .createHmac("sha256", effectiveSessionSecret)
+    .update(payload)
+    .digest("hex");
+
+  return `${payload}.${signature}`;
+}
+
+function hasValidReservationEditToken(req, reservationId) {
+  const authorization = String(req.get("authorization") || "");
+  const token = authorization.startsWith("Bearer ")
+    ? authorization.slice(7)
+    : "";
+  const [tokenReservationId, expiresAt, suppliedSignature] = token.split(".");
+
+  if (
+    tokenReservationId !== String(reservationId) ||
+    !expiresAt ||
+    !suppliedSignature ||
+    Number(expiresAt) < Date.now()
+  ) {
+    return false;
   }
+
+  const payload = `${tokenReservationId}.${expiresAt}`;
+  const expectedSignature = crypto
+    .createHmac("sha256", effectiveSessionSecret)
+    .update(payload)
+    .digest("hex");
+  const suppliedBuffer = Buffer.from(suppliedSignature, "hex");
+  const expectedBuffer = Buffer.from(expectedSignature, "hex");
+
+  return (
+    suppliedBuffer.length === expectedBuffer.length &&
+    crypto.timingSafeEqual(suppliedBuffer, expectedBuffer)
+  );
+}
+
+function protectReservationApi(req, res, next) {
+  if (req.session.userId) return next();
+
+  const isPublicRequest =
+    (req.method === "POST" && (req.path === "/" || req.path === "/lookup")) ||
+    (req.method === "GET" && req.path === "/availability");
+
+  if (isPublicRequest) return next();
+
+  const editMatch = req.method === "PUT"
+    ? req.path.match(/^\/(\d+)$/)
+    : null;
+
+  if (editMatch && hasValidReservationEditToken(req, editMatch[1])) {
+    return next();
+  }
+
+  return res.status(401).json({ error: "Authentication required." });
 }
 
 const storage = multer.diskStorage({
@@ -179,14 +245,26 @@ const quotesRoutes = require("./routes/quotes");
 const validateReservationPricing = require("./middleware/validateReservationPricing");
 const sendReservationEmails = require("./middleware/sendReservationEmails");
 
+app.use("/api/cars", (req, res, next) => {
+  if (req.method === "GET") return next();
+  return isAuthenticated(req, res, next);
+});
 app.use("/api/cars", carsRoutes(db, upload));
+
 app.use("/api/quotes", quotesRoutes(db));
+
 app.use(
   "/api/reservations",
+  protectReservationApi,
   validateReservationPricing(db),
   sendReservationEmails,
-  reservationsRoutes(db)
+  reservationsRoutes(db, { createReservationEditToken })
 );
+
+app.use("/api/extras", (req, res, next) => {
+  if (req.method === "GET") return next();
+  return isAuthenticated(req, res, next);
+});
 app.use("/api/extras", extrasRoutes(db));
 
 app.listen(port, () => {
