@@ -5,18 +5,10 @@ const session = require('express-session');
 const path = require('path');
 const multer = require('multer'); // For file uploads
 const cors = require('cors');
-const crypto = require('crypto');
 require('dotenv').config();
 
 const app = express();
 const port = process.env.PORT || 3001;
-const sessionSecret = process.env.SESSION_SECRET;
-
-if (process.env.NODE_ENV === "production" && !sessionSecret) {
-  throw new Error("SESSION_SECRET is required in production.");
-}
-
-const effectiveSessionSecret = sessionSecret || "local-development-only-secret";
 app.set("trust proxy", 1);
 
 // Middleware
@@ -34,7 +26,7 @@ app.use(cors({
 }));
 
 app.use(session({
-    secret: effectiveSessionSecret,
+    secret: process.env.SESSION_SECRET || 'dev-secret-change-me',
     resave: false,
     saveUninitialized: false,
     cookie: {
@@ -155,75 +147,10 @@ app.post('/login', (req, res) => {
 // Middleware: Auth Check
 function isAuthenticated(req, res, next) {
     if (req.session.userId) {
-        return next();
+        next();
+    } else {
+        res.status(404).send("Not found");
     }
-
-    return res.status(401).json({ error: "Authentication required." });
-}
-
-function createReservationEditToken(reservationId) {
-    const expiresAt = Date.now() + (30 * 60 * 1000);
-    const payload = `${reservationId}.${expiresAt}`;
-    const signature = crypto
-      .createHmac("sha256", effectiveSessionSecret)
-      .update(payload)
-      .digest("hex");
-
-    return `${payload}.${signature}`;
-}
-
-function hasValidReservationEditToken(req, reservationId) {
-    const authorization = String(req.get("authorization") || "");
-    const token = authorization.startsWith("Bearer ")
-      ? authorization.slice(7)
-      : "";
-
-    const [tokenReservationId, expiresAt, suppliedSignature] = token.split(".");
-    if (
-      tokenReservationId !== String(reservationId) ||
-      !expiresAt ||
-      !suppliedSignature ||
-      Number(expiresAt) < Date.now()
-    ) {
-      return false;
-    }
-
-    const payload = `${tokenReservationId}.${expiresAt}`;
-    const expectedSignature = crypto
-      .createHmac("sha256", effectiveSessionSecret)
-      .update(payload)
-      .digest("hex");
-
-    const suppliedBuffer = Buffer.from(suppliedSignature, "hex");
-    const expectedBuffer = Buffer.from(expectedSignature, "hex");
-
-    return (
-      suppliedBuffer.length === expectedBuffer.length &&
-      crypto.timingSafeEqual(suppliedBuffer, expectedBuffer)
-    );
-}
-
-function protectReservationApi(req, res, next) {
-    if (req.session.userId) return next();
-
-    const publicRequest =
-      (req.method === "POST" && (req.path === "/" || req.path === "/lookup")) ||
-      (req.method === "GET" && req.path === "/availability");
-
-    if (publicRequest) return next();
-
-    const publicEditMatch = req.method === "PUT"
-      ? req.path.match(/^\/(\d+)$/)
-      : null;
-
-    if (
-      publicEditMatch &&
-      hasValidReservationEditToken(req, publicEditMatch[1])
-    ) {
-      return next();
-    }
-
-    return res.status(401).json({ error: "Authentication required." });
 }
 
 
@@ -247,23 +174,8 @@ const extrasRoutes = require("./routes/extras");
 
 
 //-------------------------------------------------------------CALENDAR ---------------------------------------------------------------------------------------------
-// Public customers may read cars/extras, but only admins may modify them.
-app.use("/api/cars", (req, res, next) => {
-  if (req.method === "GET") return next();
-  return isAuthenticated(req, res, next);
-});
 app.use("/api/cars", carsRoutes(db, upload));
-
-app.use("/api/reservations", protectReservationApi);
-app.use(
-  "/api/reservations",
-  reservationsRoutes(db, { createReservationEditToken })
-);
-
-app.use("/api/extras", (req, res, next) => {
-  if (req.method === "GET") return next();
-  return isAuthenticated(req, res, next);
-});
+app.use("/api/reservations", reservationsRoutes(db));
 app.use("/api/extras", extrasRoutes(db));
 
 
