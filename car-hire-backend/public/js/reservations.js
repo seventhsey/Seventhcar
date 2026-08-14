@@ -42,8 +42,8 @@ function daysBetween(start, end) {
   let renderVersion = 0;
   let statusFilter = "";              // "", "Pending", etc.
   let searchTerm = "";                // user search
-  let sortKey = null;                 // "start_date" | "end_date" | null
-  let sortDir = "asc";                // "asc" | "desc"
+  let sortKey = "start_date";         // newest reservation start date first
+  let sortDir = "desc";               // "asc" | "desc"
 
   const tableBody = document.getElementById("reservationsTable");
   const searchInput = document.getElementById("searchReservations");
