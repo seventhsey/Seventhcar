@@ -3,7 +3,7 @@ const express = require("express");
 const router = express.Router();
 const { sendConfirmedReservationEmail } = require("../services/confirmedReservationEmail");
 
-module.exports = (db) => {
+module.exports = (db, { createReservationEditToken } = {}) => {
   function formatDate(dateObj) {
     const yyyy = dateObj.getFullYear();
     const mm = String(dateObj.getMonth() + 1).padStart(2, "0");
@@ -90,6 +90,8 @@ module.exports = (db) => {
     if (conditions.length > 0) {
       query += " WHERE " + conditions.join(" AND ");
     }
+
+    query += " ORDER BY start_date DESC, start_time DESC, id DESC";
 
     db.query(query, queryParams, (err, results) => {
       if (err) {
@@ -199,6 +201,9 @@ module.exports = (db) => {
                   reservation,
                   extras,
                   car: carRows[0] || null,
+                  edit_token: createReservationEditToken
+                    ? createReservationEditToken(reservationId)
+                    : null,
                 });
               }
             );
@@ -257,6 +262,9 @@ module.exports = (db) => {
       customer_name, customer_email, customer_phone, flight_number, plate_number,
       start_date, start_time, end_date, end_time, total_price, status, extras, notes
     } = req.body;
+    const allowedStatuses = new Set(["Pending", "Approved", "Completed", "Cancelled"]);
+    const safeStatus =
+      req.session.userId && allowedStatuses.has(status) ? status : "Pending";
 
     db.query(
       `INSERT INTO reservations
@@ -264,7 +272,7 @@ module.exports = (db) => {
        start_date, start_time, end_date, end_time, total_price, status, notes)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [customer_name, customer_email, customer_phone, flight_number, plate_number,
-        start_date, start_time, end_date, end_time, total_price, status, notes || ""],
+        start_date, start_time, end_date, end_time, total_price, safeStatus, notes || ""],
       (err, result) => {
         if (err) return res.status(500).json({ error: "Server error creating reservation." });
 
@@ -360,6 +368,9 @@ module.exports = (db) => {
       customer_name, customer_email, customer_phone, flight_number, plate_number,
       start_date, start_time, end_date, end_time, total_price, status, extras, notes
     } = req.body;
+    const allowedStatuses = new Set(["Pending", "Approved", "Completed", "Cancelled"]);
+    const safeStatus =
+      req.session.userId && allowedStatuses.has(status) ? status : "Pending";
 
     db.query(
       `UPDATE reservations SET
@@ -377,7 +388,7 @@ module.exports = (db) => {
         end_date,
         end_time,
         total_price,
-        status,
+        safeStatus,
         notes || "",
         reservationId
       ],
