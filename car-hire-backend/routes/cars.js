@@ -267,17 +267,83 @@ module.exports = (db, upload) => {
   // ------------------------------------------
   // 8) DELETE /api/cars/:plateNumber
   // ------------------------------------------
-  router.delete("/:plateNumber", (req, res) => {
+  router.delete("/:plateNumber", async (req, res) => {
     const { plateNumber } = req.params;
-    db.query("DELETE FROM cars WHERE plate_number = ?", [plateNumber], (err, result) => {
-      if (err) {
-        return res.status(500).json({ success: false, message: "Server error" });
+    let connection;
+
+    try {
+      connection = await db.promise().getConnection();
+      await connection.beginTransaction();
+
+      const [carRows] = await connection.query(
+        "SELECT plate_number FROM cars WHERE plate_number = ? FOR UPDATE",
+        [plateNumber]
+      );
+
+      if (!carRows.length) {
+        await connection.rollback();
+        return res.status(404).json({
+          success: false,
+          message: "Car not found",
+        });
       }
-      if (result.affectedRows === 0) {
-        return res.status(404).json({ success: false, message: "Car not found" });
+
+      const [reservationRows] = await connection.query(
+        "SELECT id FROM reservations WHERE plate_number = ? FOR UPDATE",
+        [plateNumber]
+      );
+      const reservationIds = reservationRows.map((row) => row.id);
+
+      let deletedExtras = 0;
+      if (reservationIds.length) {
+        const [extrasResult] = await connection.query(
+          "DELETE FROM reservation_extras WHERE reservation_id IN (?)",
+          [reservationIds]
+        );
+        deletedExtras = extrasResult.affectedRows;
       }
-      res.json({ success: true, message: "Car removed successfully" });
-    });
+
+      const [reservationsResult] = await connection.query(
+        "DELETE FROM reservations WHERE plate_number = ?",
+        [plateNumber]
+      );
+      const [carResult] = await connection.query(
+        "DELETE FROM cars WHERE plate_number = ?",
+        [plateNumber]
+      );
+
+      if (carResult.affectedRows !== 1) {
+        throw new Error("Car was not deleted.");
+      }
+
+      await connection.commit();
+
+      return res.json({
+        success: true,
+        message: "Car and all related reservation data removed successfully",
+        deleted: {
+          cars: carResult.affectedRows,
+          reservations: reservationsResult.affectedRows,
+          reservation_extras: deletedExtras,
+        },
+      });
+    } catch (error) {
+      if (connection) {
+        try {
+          await connection.rollback();
+        } catch (rollbackError) {
+          console.error("Could not roll back car deletion:", rollbackError);
+        }
+      }
+
+      console.error(`Error deleting car ${plateNumber} and related data:`, error);
+      return res.status(500).json({
+        success: false,
+        message: "Could not remove the vehicle and its related reservations. Nothing was deleted.",
+      });
+    } finally {
+      if (connection) connection.release();
+    }
   });
 
   // Return the router
