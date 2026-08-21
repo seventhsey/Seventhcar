@@ -91,9 +91,9 @@ function initializeModalScript() {
     removeCarBtn.addEventListener('click', async () => {
       const plateNumber = document.getElementById('plateNumber').value;
       const confirmed = await window.uiConfirm({
-        title: 'Remove this vehicle?',
-        message: `Vehicle ${plateNumber} will be permanently removed from the fleet.`,
-        confirmText: 'Remove vehicle',
+        title: 'Permanently delete this vehicle?',
+        message: `Vehicle ${plateNumber}, all of its reservations, and all extras attached to those reservations will be permanently deleted. This includes pending and approved bookings and cannot be undone.`,
+        confirmText: 'Delete vehicle and reservations',
         tone: 'danger',
       });
       if (!confirmed) return;
@@ -104,11 +104,17 @@ function initializeModalScript() {
           if (!response.ok) throw new Error(result.message || 'Failed to remove car.');
           return result;
         })
-        .then(() => {
+        .then((result) => {
           modal.style.display = 'none';
           const carContainer = document.getElementById('carContainer');
           loadCars(carContainer, 'admin');
-          window.uiNotify('Vehicle removed.', 'success');
+
+          const reservationsDeleted = Number(result.deleted?.reservations || 0);
+          const extrasDeleted = Number(result.deleted?.reservation_extras || 0);
+          window.uiNotify(
+            `Vehicle removed. Deleted ${reservationsDeleted} reservation(s) and ${extrasDeleted} linked extra record(s).`,
+            'success'
+          );
         })
         .catch(error => {
           console.error('Error removing car:', error);
