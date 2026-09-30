@@ -94,25 +94,28 @@ function parseLocalDateTime(dateStr, timeStr) {
 }
 
 async function checkIfDatesConflict(plateNumber, startDT, endDT, selfId = null) {
-  const params = new URLSearchParams({
-    plate_number: plateNumber,
-    start_date: formatLocalDate(startDT),
-    start_time: formatLocalTime(startDT),
-    end_date: formatLocalDate(endDT),
-    end_time: formatLocalTime(endDT),
-    exclude_id: selfId || "0",
-  });
-  const cacheKey = params.toString();
+  const params = new URLSearchParams({ plate_number: plateNumber });
+  const cacheKey = [
+    params.toString(),
+    startDT.getTime(),
+    endDT.getTime(),
+    selfId || "0",
+  ].join("|");
 
   if (conflictRequestCache.has(cacheKey)) {
     return conflictRequestCache.get(cacheKey);
   }
 
-  const request = fetch(`/api/reservations/conflict?${cacheKey}`)
+  const request = fetch(`/api/reservations?${params.toString()}`)
     .then(async res => {
       if (!res.ok) throw new Error("Conflict check failed.");
-      const result = await res.json();
-      return Boolean(result.conflict);
+      const reservations = await res.json();
+      return reservations.some(reservation => {
+        if (selfId && String(reservation.id) === String(selfId)) return false;
+        const reservationStart = parseLocalDateTime(reservation.start_date, reservation.start_time);
+        const reservationEnd = parseLocalDateTime(reservation.end_date, reservation.end_time);
+        return startDT < reservationEnd && reservationStart < endDT;
+      });
     })
     .catch(e => {
       console.warn("Conflict check failed:", e);
@@ -127,17 +130,6 @@ async function checkIfDatesConflict(plateNumber, startDT, endDT, selfId = null) 
   } finally {
     // The short cache intentionally remains so duplicate change handlers reuse it.
   }
-}
-
-function formatLocalDate(date) {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-}
-
-function formatLocalTime(date) {
-  return `${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
 }
 
 window.registerPriceAutoCalc = registerPriceAutoCalc;
