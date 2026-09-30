@@ -16,7 +16,7 @@ import ReviewSummary, {
   ReservationExtra,
 } from "../components/ReviewSummary";
 
-type PaymentOption = "arrival" | "deposit" | "full" | "";
+type PaymentOption = "arrival" | "";
 type StoredExtra = number | { id?: number; qty?: number };
 
 type StoredReservation = {
@@ -38,20 +38,7 @@ const paymentOptions = [
   {
     id: "arrival" as const,
     title: "Pay on arrival",
-    description: "Pay for the rental upon pickup with card or cash.",
-    disabled: false,
-  },
-  {
-    id: "deposit" as const,
-    title: "10% deposit payment",
-    description: "Online deposit payment is coming soon.",
-    disabled: true,
-  },
-  {
-    id: "full" as const,
-    title: "100% full amount payment",
-    description: "Online full payment is coming soon.",
-    disabled: true,
+    description: "Payment is due when you collect the vehicle.",
   },
 ];
 
@@ -70,7 +57,7 @@ const initialBookingData: BookingData = {
   phone: "",
   flight_number: "",
   notes: "",
-  payment_option: "",
+  payment_option: "arrival",
   estimated_total: 0,
   extras: [],
 };
@@ -94,7 +81,7 @@ function isValidPhone(value: string) {
 export default function Contact() {
   const router = useRouter();
   const [openReview, setOpenReview] = useState(false);
-  const [selectedPayment, setSelectedPayment] = useState<PaymentOption>("");
+  const [selectedPayment, setSelectedPayment] = useState<PaymentOption>("arrival");
   const [submitting, setSubmitting] = useState(false);
   const [availableExtras, setAvailableExtras] = useState<AvailableExtra[]>([]);
   const [data, setData] = useState<BookingData>(initialBookingData);
@@ -128,21 +115,23 @@ export default function Contact() {
     );
     const selectedCar = readStoredJson<StoredCar>("selectedCar", {});
 
-    const extras: ReservationExtra[] = (reservation.extras || [])
-      .map((item) => {
+    const extras = (reservation.extras || []).reduce<ReservationExtra[]>(
+      (selected, item) => {
         const id = typeof item === "number" ? item : Number(item.id);
-        if (!id) return null;
+        if (!id) return selected;
 
         const extra = availableExtras.find((candidate) => candidate.id === id);
-        return {
+        selected.push({
           extra_id: id,
           price_at_booking: Number(extra?.price || 0),
           days: 1,
           qty: typeof item === "number" ? 1 : Number(item.qty || 1),
           charge_type: extra?.charge_type === "once" ? "once" : "daily",
-        } satisfies ReservationExtra;
-      })
-      .filter((item): item is ReservationExtra => Boolean(item));
+        });
+        return selected;
+      },
+      []
+    );
 
     setData((current) => ({
       ...current,
@@ -275,24 +264,21 @@ export default function Contact() {
 
         <div className="p-6 bg-white rounded-2xl space-y-6 mt-20">
           <h2 className="text-2xl font-bold text-gray-800">Payment options</h2>
-          <div className="grid md:grid-cols-3 gap-10">
+          <div className="grid max-w-xl gap-6">
             {paymentOptions.map((option) => {
               const active = selectedPayment === option.id;
               return (
                 <button
                   type="button"
                   key={option.id}
-                  disabled={option.disabled}
                   onClick={() => {
                     setSelectedPayment(option.id);
                     setData((current) => ({ ...current, payment_option: option.id }));
                   }}
                   className={`relative text-left rounded-xl p-6 transition space-y-2 border ${
-                    option.disabled
-                      ? "bg-gray-200 text-gray-400 cursor-not-allowed opacity-70"
-                      : active
-                        ? "bg-blue-500 text-white border-blue-600 shadow-lg"
-                        : "bg-gray-50 text-gray-900 hover:shadow-lg hover:border-blue-400"
+                    active
+                      ? "bg-blue-500 text-white border-blue-600 shadow-lg"
+                      : "bg-gray-50 text-gray-900 hover:shadow-lg hover:border-blue-400"
                   }`}
                 >
                   <h3 className="font-extrabold text-lg">{option.title}</h3>

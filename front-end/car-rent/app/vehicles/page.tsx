@@ -10,10 +10,10 @@ import bagIcon from "@/public/Assets/ico_bags.svg";
 
 type Car = {
   model: string;
-  category: string;
   image: string;
   fuel: string;
   doors: number | string;
+  storage: string;
   price_per_day_eur: number;
   plate_number: string;
 };
@@ -23,6 +23,7 @@ type ApiCar = {
   car_image_url?: string;
   fuel_type?: string;
   door_count?: number | string;
+  storage_space?: string;
   price?: number | string;
   plate_number?: string;
 };
@@ -122,12 +123,12 @@ export default function Vehicles() {
           const car = item as ApiCar;
           return {
             model: String(car.car_name || "Vehicle"),
-            category: "",
             image: car.car_image_url
               ? `${apiBaseUrl}/uploads/${car.car_image_url}`
-              : "/no-image.png",
+              : "/Assets/hero-cars.png",
             fuel: String(car.fuel_type || "—"),
             doors: car.door_count ?? "—",
+            storage: String(car.storage_space || ""),
             price_per_day_eur: Number(car.price || 0),
             plate_number: String(car.plate_number || ""),
           };
@@ -201,17 +202,9 @@ export default function Vehicles() {
 
               <div className="relative z-10 flex flex-col h-full">
                 <div className="px-6 py-4 rounded-t-3xl transition-colors duration-300">
-                  {car.category && (
-                    <p className="font-bold text-xs md:text-[13px] text-[#1c7fec] group-hover:text-black">
-                      {car.category}
-                    </p>
-                  )}
                   <h2 className="text-[18px] md:text-[22px] font-bold text-black group-hover:text-white">
                     {car.model}
                   </h2>
-                  <p className="text-xs md:text-[13px] group-hover:text-white mt-1">
-                    or similar...
-                  </p>
                 </div>
 
                 <div className="relative h-[190px] w-full px-6">
@@ -233,10 +226,12 @@ export default function Vehicles() {
                     <Image src={doorIcon} alt="car door icon" />
                     <span>{car.doors} Doors</span>
                   </div>
-                  <div className="flex flex-col items-center">
-                    <Image src={bagIcon} alt="bag icon" />
-                    <span>-</span>
-                  </div>
+                  {car.storage && (
+                    <div className="flex flex-col items-center">
+                      <Image src={bagIcon} alt="luggage capacity icon" />
+                      <span>{car.storage}</span>
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex justify-between items-center px-6 py-4 bg-white min-h-[78px]">

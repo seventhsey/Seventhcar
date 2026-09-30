@@ -113,6 +113,7 @@ export default function ManageReservationPage() {
 
   useEffect(() => {
     if (!reservation || !startDate || !endDate) return;
+    const currentReservationId = reservation.id;
 
     const controller = new AbortController();
 
@@ -121,7 +122,7 @@ export default function ManageReservationPage() {
         const params = new URLSearchParams({
           startDate,
           endDate,
-          excludeReservationId: String(reservation.id),
+          excludeReservationId: String(currentReservationId),
         });
         const response = await fetch(
           `${apiUrl}/cars/available-for-edit?${params.toString()}`,
@@ -245,7 +246,13 @@ export default function ManageReservationPage() {
 
       const extras = Array.isArray(result.extras) ? result.extras : [];
       setSelectedExtras(
-        extras.map((item) => {
+        extras.map((item: {
+          extra_id: number | string;
+          current_price?: number | string;
+          price_at_booking?: number | string;
+          name?: string;
+          charge_type?: string;
+        }) => {
           const matching = allExtras.find(
             (extra) => extra.id === Number(item.extra_id)
           );

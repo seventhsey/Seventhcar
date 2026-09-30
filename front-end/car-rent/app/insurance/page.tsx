@@ -30,6 +30,21 @@ interface IInsuranceItem {
 // Define valid plan keys
 type PlanKey = "basic" | "medium" | "full";
 
+type ExtraRecord = {
+  id: number;
+  price: number | string;
+};
+
+type StoredExtra = number | { id?: number };
+
+type PendingReservation = {
+  pickupDate?: string;
+  pickupTime?: string;
+  returnDate?: string;
+  returnTime?: string;
+  extras?: StoredExtra[];
+};
+
 const insuranceData: IInsuranceItem[] = [
   {
     title: "Step 2. - Choosing insurance",
@@ -58,15 +73,7 @@ const insuranceData: IInsuranceItem[] = [
 // Plan key to extra ID mapping (from your IDs above)
 const protectionExtraIds = { basic: 1, medium: 2, full: 3 };
 
-function getAllExtras() {
-  if (typeof window === "undefined") return [];
-  try {
-    return JSON.parse(localStorage.getItem("allExtras") || "[]");
-  } catch {
-    return [];
-  }
-}
-function getPendingReservation() {
+function getPendingReservation(): PendingReservation | null {
   if (typeof window === "undefined") return null;
   try {
     return JSON.parse(localStorage.getItem("pendingReservation") || "{}");
@@ -76,18 +83,26 @@ function getPendingReservation() {
 }
 
 // Get extra price by ID
-function getExtraPrice(id: number, allExtras: any[]) {
-  const found = allExtras.find((x: any) => Number(x.id) === id);
+function getExtraPrice(id: number, allExtras: ExtraRecord[]) {
+  const found = allExtras.find((extra) => Number(extra.id) === id);
   return found ? Number(found.price) : 0;
 }
 
-// Calculate booking days (+1 to be inclusive)
-function getBookingDays(reservation: any) {
-  if (!reservation || !reservation.pickupDate || !reservation.returnDate) return 1;
-  const start = new Date(reservation.pickupDate);
-  const end = new Date(reservation.returnDate);
-  const diff = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
-  return diff + 1;
+// Keep this aligned with the authoritative backend pricing calculation.
+function getBookingDays(reservation: PendingReservation | null) {
+  if (
+    !reservation?.pickupDate ||
+    !reservation?.returnDate ||
+    !reservation?.pickupTime ||
+    !reservation?.returnTime
+  ) return 1;
+
+  const start = new Date(`${reservation.pickupDate}T00:00:00`);
+  const end = new Date(`${reservation.returnDate}T00:00:00`);
+  let days = Math.floor((end.getTime() - start.getTime()) / 86400000) + 1;
+
+  if (reservation.returnTime > reservation.pickupTime) days += 1;
+  return Math.max(1, days);
 }
 
 const Insurance = () => {
@@ -102,10 +117,10 @@ const Insurance = () => {
 
   const handleSelectProtection = (protectionId: number) => {
     const reservation = JSON.parse(localStorage.getItem("pendingReservation") || "{}");
-    const currentExtras = Array.isArray(reservation.extras) ? reservation.extras : [];
+    const currentExtras: StoredExtra[] = Array.isArray(reservation.extras) ? reservation.extras : [];
 
 // remove only old insurance IDs: 1, 2, 3
-const withoutOldInsurance = currentExtras.filter((ex: any) => {
+const withoutOldInsurance = currentExtras.filter((ex) => {
   const id = typeof ex === "number" ? ex : Number(ex?.id);
   return ![1, 2, 3].includes(id);
 });
@@ -115,15 +130,15 @@ reservation.extras = [...withoutOldInsurance, protectionId];
     router.push("/extras");
   };
   // -- Calculate dynamic prices --
-  const [allExtras, setAllExtras] = useState<any[]>([]);
+  const [allExtras, setAllExtras] = useState<ExtraRecord[]>([]);
   const reservation = getPendingReservation();
   const bookingDays = getBookingDays(reservation);
 
   useEffect(() => {
   fetch(`${process.env.NEXT_PUBLIC_API_URL}/extras`)
     .then((res) => res.json())
-    .then((data) => setAllExtras(data))
-    .catch((err) => {
+    .then((data: unknown) => setAllExtras(Array.isArray(data) ? data as ExtraRecord[] : []))
+    .catch(() => {
       setAllExtras([]); // fallback to empty array if error
     });
 }, []);
@@ -173,29 +188,6 @@ reservation.extras = [...withoutOldInsurance, protectionId];
               {insuranceData.slice(1).map((item) => {
                 const currentData = item[activeTab];
 
-                // Responsibility row with dynamic price
-                if (item.title === "Responsibility (Excess)") {
-                  return (
-                    <div
-                      className="flex w-full justify-between items-center mb-4"
-                      key={item.title}
-                    >
-                      <h3 className="w-1/2 flex gap-2">
-                        <Info className="bg-black opacity-20 text-white rounded-full" />
-                        {item.title}
-                      </h3>
-                      <div className="w-1/2 flex flex-col justify-end items-end">
-                        <span className="font-semibold">
-                          {protectionPrices[activeTab] * bookingDays} EUR
-                        </span>
-                        <span className="text-xs opacity-60">
-                          ({protectionPrices[activeTab]} × {bookingDays} days)
-                        </span>
-                      </div>
-                    </div>
-                  );
-                }
-
                 return (
                   <div
                     className="flex w-full justify-between items-center mb-4"
@@ -222,12 +214,12 @@ reservation.extras = [...withoutOldInsurance, protectionId];
                 );
               })}
 
-              {/* Mobile Total Price (Bottom) */}
+              {/* Mobile protection price (Bottom) */}
               <div className="flex justify-end items-end mt-10 gap-1 leading-none">
                 <span className="text-4xl font-bold">
                   {protectionPrices[activeTab] * bookingDays}
                 </span>
-                <span className="text-sm pb-[2px]">EUR / total</span>
+                <span className="text-sm pb-[2px]">EUR protection total</span>
               </div>
               <div className="flex justify-end mt-4">
   <button
@@ -270,25 +262,6 @@ reservation.extras = [...withoutOldInsurance, protectionId];
                       {item.title}
                     </td>
                     {plans.map((planKey) => {
-                      // Dynamic price for responsibility
-                      if (item.title === "Responsibility (Excess)") {
-                        return (
-                          <td
-                            key={planKey}
-                            className={`p-3 transition duration-200 text-lg font-bold ${getHoverClass(
-                              planKey
-                            )}`}
-                            onMouseEnter={() => setHoveredCol(planKey)}
-                            onMouseLeave={() => setHoveredCol(null)}
-                          >
-                            {protectionPrices[planKey] * bookingDays} EUR
-                            <span className="text-xs block mt-1 opacity-60">
-                              ({protectionPrices[planKey]} × {bookingDays} days)
-                            </span>
-                          </td>
-                        );
-                      }
-                      // Default
                       return (
                         <td
                           key={planKey}
@@ -320,9 +293,9 @@ reservation.extras = [...withoutOldInsurance, protectionId];
                 );
               })}
 
-              {/* Table footer, total price for each plan */}
+              {/* Protection price for the selected rental length */}
               <tr>
-                <td></td>
+                <td className="p-3 font-bold">Protection total ({bookingDays} day(s))</td>
                 {plans.map((planKey) => (
                   <td key={planKey} className="font-bold text-2xl">
                     {protectionPrices[planKey] * bookingDays} EUR

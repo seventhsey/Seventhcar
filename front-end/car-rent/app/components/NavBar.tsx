@@ -6,7 +6,10 @@ import Link from "next/link";
 const links = [
   { label: "Home", path: "/" },
   { label: "Vehicles", path: "/vehicles" },
+  { label: "About", path: "/#about" },
+  { label: "Contact", path: "/#contact" },
   { label: "FAQ", path: "/faq" },
+  { label: "Manage Reservation", path: "/manage-reservation" },
 ];
 
 const NavBar: React.FC = () => {
@@ -19,7 +22,9 @@ const NavBar: React.FC = () => {
   return (
     <nav className="bg-white shadow-xl border-b-4 border-[#1c7fec] w-full rounded-b-xl font-bold max-w-[1230px] md:mx-auto mx-3">
       <div className="px-4 py-4 flex justify-between items-center">
-        <div className="text-xl">Car Rental</div>
+        <Link href="/" className="text-xl hover:text-[#1c7fec] transition-colors">
+          Seventh Car Hire
+        </Link>
 
         <div className="md:hidden">
           <button

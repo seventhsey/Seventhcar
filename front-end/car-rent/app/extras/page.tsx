@@ -6,23 +6,35 @@ import { getExtraMaxQuantity } from "../lib/extraLimits";
 
 const ignoreIds = [1, 2, 3, 9, 10, 11];
 
+type Extra = {
+  id: number;
+  name: string;
+  price: number | string;
+  short_desc?: string;
+  description?: string;
+  charge_type?: "daily" | "once" | string;
+};
+
+type StoredExtra = number | { id: number; qty?: number };
+
 const Extras = () => {
-  const [extras, setExtras] = useState<any[]>([]);
+  const [extras, setExtras] = useState<Extra[]>([]);
   const [quantities, setQuantities] = useState<{ [key: number]: number }>({});
 
   useEffect(() => {
     fetch(`${process.env.NEXT_PUBLIC_API_URL}/extras`)
       .then((res) => res.json())
-      .then((data) => {
-        const filtered = data.filter((extra: any) => !ignoreIds.includes(Number(extra.id)));
+      .then((data: unknown) => {
+        const source = Array.isArray(data) ? data as Extra[] : [];
+        const filtered = source.filter((extra) => !ignoreIds.includes(Number(extra.id)));
         setExtras(filtered);
 
         const reservation = JSON.parse(localStorage.getItem("pendingReservation") || "{}");
-        const selected = Array.isArray(reservation.extras) ? reservation.extras : [];
+        const selected: StoredExtra[] = Array.isArray(reservation.extras) ? reservation.extras : [];
         const initialQuantities: { [key: number]: number } = {};
 
-        filtered.forEach((extra: any) => {
-          const existing = selected.find((item: any) => {
+        filtered.forEach((extra) => {
+          const existing = selected.find((item) => {
             const id = typeof item === "number" ? item : Number(item?.id);
             return id === Number(extra.id);
           });
@@ -37,7 +49,7 @@ const Extras = () => {
       });
   }, []);
 
-  const handleQuantityChange = (extra: any, delta: number) => {
+  const handleQuantityChange = (extra: Extra, delta: number) => {
     const id = Number(extra.id);
     const max = getExtraMaxQuantity(extra);
 
@@ -49,9 +61,9 @@ const Extras = () => {
 
   const handleSelect = () => {
     const reservation = JSON.parse(localStorage.getItem("pendingReservation") || "{}");
-    let prevExtras: any[] = Array.isArray(reservation.extras) ? reservation.extras : [];
+    let prevExtras: StoredExtra[] = Array.isArray(reservation.extras) ? reservation.extras : [];
 
-    prevExtras = prevExtras.filter((item: any) => {
+    prevExtras = prevExtras.filter((item) => {
       const existingId = typeof item === "number" ? item : Number(item?.id);
       return !extras.some((e) => Number(e.id) === existingId);
     });

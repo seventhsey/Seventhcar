@@ -34,7 +34,7 @@ const AboutAndCom = () => {
   ];
 
   return (
-    <div className="max-w-6xl mx-auto px-[15px] md:px-0 py-16 overflow-hidden md:overflow-visible">
+    <section id="about" className="max-w-6xl mx-auto px-[15px] md:px-0 py-16 overflow-hidden md:overflow-visible scroll-mt-24">
       <div className="flex flex-col md:flex-row md:justify-between w-full">
         <div className='flex md:gap-2 w-full -ml-8 md:w-[40%]'>
           <div className='flex flex-col items-center'>
@@ -50,12 +50,6 @@ const AboutAndCom = () => {
               <br />
               Our team offers friendly support, flexible rental options, and competitive pricing so you can explore Seychelles at your own pace. Choose the right vehicle, plan your journey, and enjoy the islands with confidence.
             </p>
-            <button className="p-[13px_25px_13px_35px] bg-[#f8f8f8] text-[13px] font-bold text-[#17191c] rounded hover:bg-[#1c7fec] hover:text-white transition relative cursor-pointer">
-              <div className="absolute p-1.5 bg-white text-[#1c7fec] rounded-full -left-3 top-[7px]">
-                <ChevronRight size={18} />
-              </div>
-              Read more
-            </button>
           </div>
         </div>
 
@@ -102,7 +96,7 @@ const AboutAndCom = () => {
           </Swiper>
         </div>
       </div>
-    </div>
+    </section>
   );
 };
 
