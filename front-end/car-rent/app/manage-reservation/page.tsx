@@ -132,14 +132,17 @@ export default function ManageReservationPage() {
         const cars: Car[] = Array.isArray(result) ? result : [];
         setAvailableCars(cars);
 
-        if (!cars.some((car) => car.plate_number === selectedPlate)) {
+        setSelectedPlate((currentPlate) => {
+          if (cars.some((car) => car.plate_number === currentPlate)) {
+            setAvailabilityMessage("");
+            return currentPlate;
+          }
+
           setAvailabilityMessage(
             "The selected vehicle is unavailable for these dates. Choose another vehicle."
           );
-          if (cars.length) setSelectedPlate(cars[0].plate_number);
-        } else {
-          setAvailabilityMessage("");
-        }
+          return cars[0]?.plate_number || currentPlate;
+        });
       } catch {
         if (!controller.signal.aborted) {
           setAvailabilityMessage("Could not check vehicle availability.");
@@ -149,7 +152,7 @@ export default function ManageReservationPage() {
 
     checkAvailability();
     return () => controller.abort();
-  }, [apiUrl, reservation, startDate, endDate, selectedPlate]);
+  }, [apiUrl, reservation, startDate, endDate]);
 
   const quoteInput = useMemo(
     () => ({
