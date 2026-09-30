@@ -98,11 +98,51 @@ module.exports = (db, { createReservationEditToken } = {}) => {
         console.error("Database error:", err);
         return res.status(500).json({ error: "Server error" });
       }
+
       results.forEach((row) => {
         if (row.start_date) row.start_date = formatDate(row.start_date);
         if (row.end_date) row.end_date = formatDate(row.end_date);
+        row.extras = [];
       });
-      res.json(results);
+
+      if (!results.length) {
+        return res.json(results);
+      }
+
+      const reservationIds = results.map((row) => row.id);
+      const placeholders = reservationIds.map(() => "?").join(",");
+      const extrasQuery = `
+        SELECT
+          re.reservation_id,
+          re.extra_id,
+          re.days,
+          re.price_at_booking,
+          e.name,
+          e.charge_type,
+          e.price
+        FROM reservation_extras re
+        LEFT JOIN extras e ON e.id = re.extra_id
+        WHERE re.reservation_id IN (${placeholders})
+        ORDER BY re.reservation_id, re.extra_id
+      `;
+
+      db.query(extrasQuery, reservationIds, (extrasErr, extraRows) => {
+        if (extrasErr) {
+          console.error("Error loading reservation extras:", extrasErr);
+          return res.status(500).json({ error: "Server error loading reservation extras" });
+        }
+
+        const reservationsById = new Map(
+          results.map((reservation) => [Number(reservation.id), reservation])
+        );
+
+        extraRows.forEach((extra) => {
+          const reservation = reservationsById.get(Number(extra.reservation_id));
+          if (reservation) reservation.extras.push(extra);
+        });
+
+        return res.json(results);
+      });
     });
   });
 

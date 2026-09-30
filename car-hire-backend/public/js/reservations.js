@@ -23,7 +23,6 @@ document.addEventListener("DOMContentLoaded", function () {
   function normalize(str){ return (str||"").toString().toLowerCase().trim(); }
 
   let ALL = [];
-  let renderVersion = 0;
   let statusFilter = "";
   let searchTerm = "";
   let sortKey = "start_date";
@@ -86,38 +85,41 @@ document.addEventListener("DOMContentLoaded", function () {
 
     if (sortKey) {
       out.sort((a,b) => {
-        const A = new Date(a[sortKey]).getTime();
-        const B = new Date(b[sortKey]).getTime();
-        return sortDir === "asc" ? (A - B) : (B - A);
+        const aTime = sortKey === "start_date"
+          ? new Date(`${a.start_date}T${String(a.start_time || "00:00").slice(0, 5)}`).getTime()
+          : new Date(`${a.end_date}T${String(a.end_time || "00:00").slice(0, 5)}`).getTime();
+        const bTime = sortKey === "start_date"
+          ? new Date(`${b.start_date}T${String(b.start_time || "00:00").slice(0, 5)}`).getTime()
+          : new Date(`${b.end_date}T${String(b.end_time || "00:00").slice(0, 5)}`).getTime();
+        const comparison = (Number.isFinite(aTime) ? aTime : 0) - (Number.isFinite(bTime) ? bTime : 0);
+
+        if (comparison !== 0) {
+          return sortDir === "asc" ? comparison : -comparison;
+        }
+
+        return sortDir === "asc"
+          ? Number(a.id) - Number(b.id)
+          : Number(b.id) - Number(a.id);
       });
     }
     return out;
   }
 
-  async function renderTable() {
-    const myRender = ++renderVersion;
+  function renderTable() {
     tableBody.innerHTML = "";
     const list = applyFiltersSort(ALL);
 
     for (const reservation of list) {
-      if (myRender !== renderVersion) return;
-      try {
-        const res = await fetch(`/api/reservations/${reservation.id}/extras`);
-        const extras = await res.json();
-        const diff = calculateBookingDays(
-          reservation.start_date,
-          reservation.start_time,
-          reservation.end_date,
-          reservation.end_time
-        );
-        const dropdown = buildExtrasDropdown(extras, diff);
-        if (myRender !== renderVersion) return;
-        const tr = document.createElement("tr");
-        tr.innerHTML = renderRow(reservation, dropdown);
-        tableBody.appendChild(tr);
-      } catch (e) {
-        console.error("Error fetching extras:", e);
-      }
+      const diff = calculateBookingDays(
+        reservation.start_date,
+        reservation.start_time,
+        reservation.end_date,
+        reservation.end_time
+      );
+      const dropdown = buildExtrasDropdown(reservation.extras || [], diff);
+      const tr = document.createElement("tr");
+      tr.innerHTML = renderRow(reservation, dropdown);
+      tableBody.appendChild(tr);
     }
   }
 
