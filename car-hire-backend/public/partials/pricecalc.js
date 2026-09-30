@@ -1,5 +1,8 @@
 // pricecalc.js
 
+const carRateCache = new Map();
+const conflictRequestCache = new Map();
+
 function calculateBookingDays(startDateStr, startTimeStr, endDateStr, endTimeStr) {
   const startDate = new Date(`${startDateStr}T00:00:00`);
   const endDate = new Date(`${endDateStr}T00:00:00`);
@@ -58,13 +61,14 @@ async function autoCalculatePrice() {
     return;
   }
 
-  let dailyRate = 0;
+  let dailyRate = carRateCache.get(plateNumber) || 0;
 
-  try {
+  if (!carRateCache.has(plateNumber)) try {
     const res = await fetch(`/api/cars/${encodeURIComponent(plateNumber)}`);
     if (res.ok) {
       const car = await res.json();
       dailyRate = Number(car.price || 0);
+      carRateCache.set(plateNumber, dailyRate);
     }
   } catch (e) {
     console.warn("Failed to fetch car rate:", e);
@@ -90,24 +94,50 @@ function parseLocalDateTime(dateStr, timeStr) {
 }
 
 async function checkIfDatesConflict(plateNumber, startDT, endDT, selfId = null) {
-  try {
-    const res = await fetch(`/api/reservations?plate_number=${encodeURIComponent(plateNumber)}`);
-    if (!res.ok) return false;
+  const params = new URLSearchParams({
+    plate_number: plateNumber,
+    start_date: formatLocalDate(startDT),
+    start_time: formatLocalTime(startDT),
+    end_date: formatLocalDate(endDT),
+    end_time: formatLocalTime(endDT),
+    exclude_id: selfId || "0",
+  });
+  const cacheKey = params.toString();
 
-    const list = await res.json();
-
-    return list.some(r => {
-      if (selfId && String(r.id) === String(selfId)) return false;
-
-      const rStart = parseLocalDateTime(r.start_date, r.start_time);
-      const rEnd = parseLocalDateTime(r.end_date, r.end_time);
-
-      return startDT < rEnd && rStart < endDT;
-    });
-  } catch (e) {
-    console.warn("Conflict check failed:", e);
-    return false;
+  if (conflictRequestCache.has(cacheKey)) {
+    return conflictRequestCache.get(cacheKey);
   }
+
+  const request = fetch(`/api/reservations/conflict?${cacheKey}`)
+    .then(async res => {
+      if (!res.ok) throw new Error("Conflict check failed.");
+      const result = await res.json();
+      return Boolean(result.conflict);
+    })
+    .catch(e => {
+      console.warn("Conflict check failed:", e);
+      return false;
+    });
+
+  conflictRequestCache.set(cacheKey, request);
+  window.setTimeout(() => conflictRequestCache.delete(cacheKey), 2000);
+
+  try {
+    return await request;
+  } finally {
+    // The short cache intentionally remains so duplicate change handlers reuse it.
+  }
+}
+
+function formatLocalDate(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function formatLocalTime(date) {
+  return `${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
 }
 
 window.registerPriceAutoCalc = registerPriceAutoCalc;
