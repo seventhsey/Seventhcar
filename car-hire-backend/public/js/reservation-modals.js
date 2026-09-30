@@ -31,8 +31,23 @@ document.addEventListener("DOMContentLoaded", function () {
     return extrasPromise;
   }
 
-  function loadReservationDetails(reservationId) {
-    return fetchJson(`/api/reservations/${reservationId}/details`);
+  async function loadReservationDetails(reservationId) {
+    const cachedReservation = window.getCachedReservation
+      ? window.getCachedReservation(reservationId)
+      : null;
+
+    if (cachedReservation) {
+      return {
+        reservation: cachedReservation,
+        extras: cachedReservation.extras || [],
+      };
+    }
+
+    const [reservation, extras] = await Promise.all([
+      fetchJson(`/api/reservations/${reservationId}`),
+      fetchJson(`/api/reservations/${reservationId}/extras`),
+    ]);
+    return { reservation, extras };
   }
 
   function initializeModalEventListeners() {
