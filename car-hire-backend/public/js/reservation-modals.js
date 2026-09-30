@@ -1,6 +1,40 @@
 // reservation-modals.js
 
 document.addEventListener("DOMContentLoaded", function () {
+  let carsPromise = null;
+  let extrasPromise = null;
+
+  async function fetchJson(url) {
+    const response = await fetch(url);
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.error || `Could not load ${url}.`);
+    return result;
+  }
+
+  function loadCars() {
+    if (!carsPromise) {
+      carsPromise = fetchJson("/api/cars").catch(error => {
+        carsPromise = null;
+        throw error;
+      });
+    }
+    return carsPromise;
+  }
+
+  function loadExtras() {
+    if (!extrasPromise) {
+      extrasPromise = fetchJson("/api/extras").catch(error => {
+        extrasPromise = null;
+        throw error;
+      });
+    }
+    return extrasPromise;
+  }
+
+  function loadReservationDetails(reservationId) {
+    return fetchJson(`/api/reservations/${reservationId}/details`);
+  }
+
   function initializeModalEventListeners() {
     document.body.addEventListener("click", async function (event) {
       if (event.target.matches("#addReservationBtn")) {
@@ -47,13 +81,9 @@ document.addEventListener("DOMContentLoaded", function () {
     return Math.max(1, days);
   }
 
-  function openReservationModal(reservationId) {
-    fetch(`/api/reservations/${reservationId}`)
-      .then(response => {
-        if (!response.ok) throw new Error("Could not load reservation details.");
-        return response.json();
-      })
-      .then(reservation => {
+  async function openReservationModal(reservationId) {
+    try {
+        const { reservation, extras } = await loadReservationDetails(reservationId);
         document.getElementById("modalCustomer").innerText = reservation.customer_name;
         document.getElementById("modalEmail").innerText = reservation.customer_email || "-";
         document.getElementById("modalPhone").innerText = reservation.customer_phone || "-";
@@ -65,65 +95,54 @@ document.addEventListener("DOMContentLoaded", function () {
         document.getElementById("modalPrice").innerText = reservation.total_price;
         document.getElementById("modalStatus").innerText = reservation.status;
 
-        fetch(`/api/reservations/${reservationId}/extras`)
-          .then(res => res.json())
-          .then(extras => {
-            const dropdown = document.getElementById("extrasDropdown");
-            const diffDays = calculateBookingDays(
-              reservation.start_date,
-              reservation.start_time,
-              reservation.end_date,
-              reservation.end_time
-            );
+        const dropdown = document.getElementById("extrasDropdown");
+        const diffDays = calculateBookingDays(
+          reservation.start_date,
+          reservation.start_time,
+          reservation.end_date,
+          reservation.end_time
+        );
 
-            dropdown.innerHTML = extras.map(extra => {
-              const name = extra.name || `Extra ${extra.extra_id}`;
-              const price = extra.charge_type === "once"
-                ? Number(extra.price_at_booking || 0)
-                : Number(extra.price_at_booking || 0) * diffDays;
+        dropdown.innerHTML = extras.map(extra => {
+          const name = extra.name || `Extra ${extra.extra_id}`;
+          const price = extra.charge_type === "once"
+            ? Number(extra.price_at_booking || 0)
+            : Number(extra.price_at_booking || 0) * diffDays;
 
-              return `<option>${name} | ${extra.charge_type === "once" ? "one-time" : `${diffDays} day(s)`} | €${price.toFixed(2)}</option>`;
-            }).join('');
-          });
+          return `<option>${name} | ${extra.charge_type === "once" ? "one-time" : `${diffDays} day(s)`} | €${price.toFixed(2)}</option>`;
+        }).join('') || "<option>No extras</option>";
 
         document.getElementById("approveReservation").setAttribute("data-id", reservation.id);
         document.getElementById("rejectReservation").setAttribute("data-id", reservation.id);
         document.getElementById("editReservation").setAttribute("data-id", reservation.id);
 
         $("#reservationModal").modal("show");
-      })
-      .catch(error => {
-        console.error("Error fetching reservation details:", error);
-        window.uiNotify(error.message || "Could not load reservation details.", "error");
-      });
+    } catch (error) {
+      console.error("Error fetching reservation details:", error);
+      window.uiNotify(error.message || "Could not load reservation details.", "error");
+    }
   }
 
-  function populatePlateNumberDropdown(selectedPlate = '') {
-    fetch('/api/cars')
-      .then(res => res.json())
-      .then(cars => {
-        const dropdown = document.getElementById('editPlateNumber');
-        dropdown.innerHTML = '<option value="">Select a plate number...</option>';
+  function populatePlateNumberDropdown(cars, selectedPlate = '') {
+    const dropdown = document.getElementById('editPlateNumber');
+    dropdown.innerHTML = '<option value="">Select a plate number...</option>';
 
-        cars.forEach(car => {
-          const option = document.createElement('option');
-          option.value = car.plate_number;
-          option.textContent = car.plate_number;
-          if (car.plate_number === selectedPlate) option.selected = true;
-          dropdown.appendChild(option);
-        });
-      })
-      .catch(err => {
-        console.error('Error fetching plate numbers:', err);
-        document.getElementById('editPlateNumber').innerHTML = '<option value="">Error loading plate numbers</option>';
-        window.uiNotify("Could not load vehicle plate numbers.", "error");
-      });
+    cars.forEach(car => {
+      const option = document.createElement('option');
+      option.value = car.plate_number;
+      option.textContent = car.plate_number;
+      if (car.plate_number === selectedPlate) option.selected = true;
+      dropdown.appendChild(option);
+    });
   }
 
-  function openEditReservationModal(reservationId) {
-    fetch("/api/extras")
-      .then(res => res.json())
-      .then(allExtras => {
+  async function openEditReservationModal(reservationId) {
+    try {
+        const [allExtras, cars, details] = await Promise.all([
+          loadExtras(),
+          loadCars(),
+          reservationId ? loadReservationDetails(reservationId) : Promise.resolve(null),
+        ]);
         const container = document.getElementById('extrasList');
         container.innerHTML = allExtras.map(extra => `
           <div class="form-check mb-2">
@@ -136,11 +155,9 @@ document.addEventListener("DOMContentLoaded", function () {
         if (!reservationId) {
           document.getElementById("editReservationForm").reset();
           document.getElementById("editReservationId").value = "";
-          populatePlateNumberDropdown();
+          populatePlateNumberDropdown(cars);
         } else {
-          fetch(`/api/reservations/${reservationId}`)
-            .then(res => res.json())
-            .then(reservation => {
+              const { reservation, extras: selectedExtras } = details;
               document.getElementById("editReservationId").value = reservation.id;
               document.getElementById("editCustomerName").value = reservation.customer_name;
               document.getElementById("editCustomerEmail").value = reservation.customer_email;
@@ -153,21 +170,12 @@ document.addEventListener("DOMContentLoaded", function () {
               document.getElementById("editEndTime").value = reservation.end_time;
               document.getElementById("editTotalPrice").value = reservation.total_price;
               document.getElementById("editReservationStatus").value = reservation.status;
-              populatePlateNumberDropdown(reservation.plate_number);
+              populatePlateNumberDropdown(cars, reservation.plate_number);
 
-              fetch(`/api/reservations/${reservationId}/extras`)
-                .then(res => res.json())
-                .then(selectedExtras => {
-                  selectedExtras.forEach(extra => {
-                    const chk = document.getElementById(`extra-${extra.extra_id}`);
-                    if (chk) chk.checked = true;
-                  });
-                });
-            })
-            .catch(err => {
-              console.error("Error loading reservation for edit:", err);
-              window.uiNotify("Could not load the reservation for editing.", "error");
-            });
+              selectedExtras.forEach(extra => {
+                const chk = document.getElementById(`extra-${extra.extra_id}`);
+                if (chk) chk.checked = true;
+              });
         }
 
         setTimeout(() => {
@@ -210,11 +218,10 @@ document.addEventListener("DOMContentLoaded", function () {
         validateDates();
         $("#reservationModal").modal("hide");
         $("#editReservationModal").modal("show");
-      })
-      .catch(err => {
-        console.error("Error loading extras list:", err);
-        window.uiNotify("Could not load extras.", "error");
-      });
+    } catch (error) {
+      console.error("Error loading reservation editor:", error);
+      window.uiNotify(error.message || "Could not load the reservation editor.", "error");
+    }
   }
 
   function saveReservationChanges() {
