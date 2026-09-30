@@ -135,6 +135,10 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   };
 
+  window.getCachedReservation = function getCachedReservation(id) {
+    return ALL.find(reservation => String(reservation.id) === String(id)) || null;
+  };
+
   document.body.addEventListener("click", async function (event) {
     if (event.target.matches(".view-btn")) {
       const id = event.target.getAttribute("data-id");
