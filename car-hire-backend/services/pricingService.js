@@ -163,30 +163,39 @@ async function calculateReservationQuote(db, payload = {}) {
   const requestedById = parseRequestedExtras(payload.extras);
   const ids = [...requestedById.keys()];
 
-  let carRows;
-  let extraRows;
-
   try {
-    carRows = await query(
-      db,
-      "SELECT plate_number, car_name, price FROM cars WHERE plate_number = ?",
-      [plate_number]
-    );
+    const extrasQuery = ids.length > 0
+      ? query(
+          db,
+          `SELECT id, name, price, charge_type FROM extras WHERE id IN (${ids.map(() => "?").join(",")})`,
+          ids
+        )
+      : Promise.resolve([]);
 
-    if (ids.length > 0) {
-      const placeholders = ids.map(() => "?").join(",");
-      extraRows = await query(
+    const [carRows, extraRows] = await Promise.all([
+      query(
         db,
-        `SELECT id, name, price, charge_type FROM extras WHERE id IN (${placeholders})`,
-        ids
-      );
-    } else {
-      extraRows = [];
-    }
+        "SELECT plate_number, car_name, price FROM cars WHERE plate_number = ?",
+        [plate_number]
+      ),
+      extrasQuery,
+    ]);
+
+    return buildReservationQuote({
+      carRows,
+      extraRows,
+      ids,
+      requestedById,
+      dayCount,
+    });
   } catch (error) {
+    if (error instanceof PricingError) throw error;
     console.error("Reservation quote database error:", error);
     throw new PricingError("Could not calculate the reservation price.", 500);
   }
+}
+
+function buildReservationQuote({ carRows, extraRows, ids, requestedById, dayCount }) {
 
   if (!carRows.length) {
     throw new PricingError("Selected vehicle does not exist.");
