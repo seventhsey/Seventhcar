@@ -83,8 +83,40 @@ module.exports = function validateReservationPricing(db) {
       // Never trust browser-calculated prices. Replace them with values built
       // from the database immediately before the reservation is stored.
       req.body.extras = result.normalizedExtras;
-      req.body.total_price = result.quote.total;
-      req.calculatedQuote = result.quote;
+      req.body.calculated_price = result.quote.total;
+
+      const submittedOverride = payload.price_override;
+      const hasAdminOverride =
+        Boolean(req.session.userId) &&
+        submittedOverride !== undefined &&
+        submittedOverride !== null &&
+        submittedOverride !== "";
+      let finalTotal = result.quote.total;
+      let priceOverride = null;
+      let overrideReason = "";
+
+      if (hasAdminOverride) {
+        priceOverride = Number(submittedOverride);
+        overrideReason = String(payload.price_override_reason || "").trim();
+        if (!Number.isFinite(priceOverride) || priceOverride < 0) {
+          throw new PricingError("The manual reservation price is invalid.");
+        }
+        if (!overrideReason) {
+          throw new PricingError("A reason is required for a manual price override.");
+        }
+        finalTotal = Number(priceOverride.toFixed(2));
+      }
+
+      req.body.price_override = priceOverride;
+      req.body.price_override_reason = overrideReason;
+      req.body.total_price = finalTotal;
+      req.calculatedQuote = {
+        ...result.quote,
+        calculated_total: result.quote.total,
+        total: finalTotal,
+        price_override: priceOverride,
+        price_override_reason: overrideReason,
+      };
 
       // Existing reservation routes return their own success object. Enrich
       // that response with the exact quote used for the database write.
@@ -93,8 +125,8 @@ module.exports = function validateReservationPricing(db) {
         if (body && body.success) {
           return originalJson({
             ...body,
-            total: result.quote.total,
-            quote: result.quote,
+            total: finalTotal,
+            quote: req.calculatedQuote,
           });
         }
         return originalJson(body);

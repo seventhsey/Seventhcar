@@ -301,7 +301,8 @@ module.exports = (db, { createReservationEditToken } = {}) => {
     const {
       customer_name, customer_email, customer_phone, flight_number, plate_number,
       start_date, start_time, end_date, end_time, pickup_location, dropoff_location,
-      total_price, status, extras, notes
+      total_price, calculated_price, price_override, price_override_reason,
+      status, extras, notes
     } = req.body;
     const allowedStatuses = new Set(["Pending", "Approved", "Completed", "Cancelled"]);
     const safeStatus =
@@ -316,12 +317,14 @@ module.exports = (db, { createReservationEditToken } = {}) => {
         `INSERT INTO reservations
          (customer_name, customer_email, customer_phone, flight_number, plate_number,
           start_date, start_time, end_date, end_time, pickup_location, dropoff_location,
-          total_price, status, notes)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          total_price, calculated_price, price_override, price_override_reason,
+          status, notes)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           customer_name, customer_email, customer_phone, flight_number, plate_number,
           start_date, start_time, end_date, end_time, pickup_location || "",
-          dropoff_location || "", total_price, safeStatus, notes || ""
+          dropoff_location || "", total_price, calculated_price, price_override,
+          price_override_reason || "", safeStatus, notes || ""
         ]
       );
 
@@ -425,7 +428,8 @@ module.exports = (db, { createReservationEditToken } = {}) => {
     const {
       customer_name, customer_email, customer_phone, flight_number, plate_number,
       start_date, start_time, end_date, end_time, pickup_location, dropoff_location,
-      total_price, status, extras, notes
+      total_price, calculated_price, price_override, price_override_reason,
+      status, extras, notes
     } = req.body;
     const allowedStatuses = new Set(["Pending", "Approved", "Completed", "Cancelled"]);
     const safeStatus =
@@ -449,12 +453,14 @@ module.exports = (db, { createReservationEditToken } = {}) => {
         `UPDATE reservations SET
          customer_name=?, customer_email=?, customer_phone=?, flight_number=?, plate_number=?,
          start_date=?, start_time=?, end_date=?, end_time=?, pickup_location=?,
-         dropoff_location=?, total_price=?, status=?, notes=?
+         dropoff_location=?, total_price=?, calculated_price=?, price_override=?,
+         price_override_reason=?, status=?, notes=?
          WHERE id=?`,
         [
           customer_name, customer_email, customer_phone, flight_number, plate_number,
           start_date, start_time, end_date, end_time, pickup_location || "",
-          dropoff_location || "", total_price, safeStatus, notes || "", reservationId
+          dropoff_location || "", total_price, calculated_price, price_override,
+          price_override_reason || "", safeStatus, notes || "", reservationId
         ]
       );
 

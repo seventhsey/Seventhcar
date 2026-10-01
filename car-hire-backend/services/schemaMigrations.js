@@ -46,6 +46,24 @@ async function initializeSchema(pool) {
       "dropoff_location",
       "VARCHAR(255) NULL AFTER `pickup_location`"
     );
+    await ensureColumn(
+      connection,
+      "reservations",
+      "calculated_price",
+      "DECIMAL(10,2) NULL AFTER `total_price`"
+    );
+    await ensureColumn(
+      connection,
+      "reservations",
+      "price_override",
+      "DECIMAL(10,2) NULL AFTER `calculated_price`"
+    );
+    await ensureColumn(
+      connection,
+      "reservations",
+      "price_override_reason",
+      "VARCHAR(255) NULL AFTER `price_override`"
+    );
   } finally {
     if (hasLock) {
       try {

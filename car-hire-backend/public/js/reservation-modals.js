@@ -110,6 +110,11 @@ document.addEventListener("DOMContentLoaded", function () {
         document.getElementById("modalStartDate").innerText = reservation.start_date;
         document.getElementById("modalEndDate").innerText = reservation.end_date;
         document.getElementById("modalPrice").innerText = reservation.total_price;
+        const hasPriceOverride = reservation.price_override !== null && reservation.price_override !== undefined;
+        document.getElementById("modalCalculatedPrice").innerText = reservation.calculated_price || reservation.total_price;
+        document.getElementById("modalPriceOverrideReason").innerText = reservation.price_override_reason || "-";
+        document.getElementById("modalCalculatedPriceRow").style.display = hasPriceOverride ? "block" : "none";
+        document.getElementById("modalPriceOverrideReasonRow").style.display = hasPriceOverride ? "block" : "none";
         document.getElementById("modalStatus").innerText = reservation.status;
 
         const dropdown = document.getElementById("extrasDropdown");
@@ -187,7 +192,11 @@ document.addEventListener("DOMContentLoaded", function () {
               document.getElementById("editStartTime").value = reservation.start_time;
               document.getElementById("editEndDate").value = reservation.end_date;
               document.getElementById("editEndTime").value = reservation.end_time;
-              document.getElementById("editTotalPrice").value = reservation.total_price;
+              document.getElementById("editTotalPrice").value = reservation.calculated_price || reservation.total_price;
+              const hasOverride = reservation.price_override !== null && reservation.price_override !== undefined;
+              document.getElementById("enablePriceOverride").checked = hasOverride;
+              document.getElementById("editPriceOverride").value = hasOverride ? reservation.price_override : "";
+              document.getElementById("editPriceOverrideReason").value = reservation.price_override_reason || "";
               document.getElementById("editReservationStatus").value = reservation.status;
               populatePlateNumberDropdown(cars, reservation.plate_number);
 
@@ -200,6 +209,20 @@ document.addEventListener("DOMContentLoaded", function () {
         setTimeout(() => {
           if (window.registerPriceAutoCalc) window.registerPriceAutoCalc();
         }, 50);
+
+        const overrideCheckbox = document.getElementById("enablePriceOverride");
+        const overridePrice = document.getElementById("editPriceOverride");
+        const overrideReason = document.getElementById("editPriceOverrideReason");
+        const syncOverrideFields = () => {
+          overridePrice.disabled = !overrideCheckbox.checked;
+          overrideReason.disabled = !overrideCheckbox.checked;
+          if (!overrideCheckbox.checked) {
+            overridePrice.value = "";
+            overrideReason.value = "";
+          }
+        };
+        overrideCheckbox.onchange = syncOverrideFields;
+        syncOverrideFields();
 
         document.querySelectorAll('.extra-checkbox').forEach(chk =>
           chk.addEventListener('change', () => window.autoCalculatePrice && window.autoCalculatePrice())
@@ -261,6 +284,14 @@ document.addEventListener("DOMContentLoaded", function () {
       extra_id: parseInt(chk.value, 10),
       qty: 1,
     }));
+    const usePriceOverride = document.getElementById("enablePriceOverride").checked;
+    const priceOverride = document.getElementById("editPriceOverride").value;
+    const priceOverrideReason = document.getElementById("editPriceOverrideReason").value.trim();
+
+    if (usePriceOverride && (!priceOverride || !priceOverrideReason)) {
+      window.uiNotify("Enter a manual final price and the reason for overriding it.", "warning");
+      return;
+    }
 
     const updatedReservation = {
       customer_name: document.getElementById("editCustomerName").value,
@@ -276,6 +307,8 @@ document.addEventListener("DOMContentLoaded", function () {
       end_date: endDate,
       end_time: endTime,
       status: document.getElementById("editReservationStatus").value,
+      price_override: usePriceOverride ? Number(priceOverride) : null,
+      price_override_reason: usePriceOverride ? priceOverrideReason : "",
       extras
     };
 
