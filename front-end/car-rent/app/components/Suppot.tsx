@@ -2,18 +2,16 @@
 import React from 'react';
 import { ChevronRight } from 'lucide-react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Pagination } from 'swiper/modules';
 import 'swiper/css';
 import 'swiper/css/pagination';
 
-// Image imports (Assuming these are in the public directory)
 import img1 from '@/public/Assets/ico_key.svg';
 import img2 from '@/public/Assets/ico_time-clock.svg';
 import img3 from '@/public/Assets/ico_return-car.svg';
-import img4 from '@/public/Assets/doffay-logo-silouete.svg';
 
-// Define TypeScript interface for support card
 interface SupportCard {
   title: string;
   img: string;
@@ -39,29 +37,27 @@ export const SupportCenter: React.FC = () => {
     <div className="w-full max-w-6xl mx-auto px-4 py-12">
       <div className="flex items-center justify-between mb-4 md:mb-8">
         <h1 className="text-[30px] md:text-[36px] pl-2 md:pl-20 font-bold text-gray-900">Support Center</h1>
-        <a href="#faq" className="flex items-center text-xs md:text-sm font-bold text-black hover:text-[#1c7fec]">
+        <Link href="/faq" className="flex items-center text-xs md:text-sm font-bold text-black hover:text-[#1c7fec]">
           View FAQ <ChevronRight className="ml-1 w-4 h-4 text-[#1c7fec]" />
-        </a>
+        </Link>
       </div>
 
-      {/* Desktop View: Flex layout */}
       <div className="hidden md:flex gap-6">
         {supportCards.map((card, index) => (
-          <div
+          <Link
+            href="/faq"
             key={index}
             className="rounded-[16px] p-[13px_20px] flex flex-col items-start justify-between bg-gradient-to-r from-[#f8f8f8] to-[#f8f8f8] hover:from-[#1cb4ec] hover:to-[#1c7fec] hover:text-white transition-shadow h-[155px] w-[210px] relative overflow-hidden"
           >
             <Image src={card.img} alt={card.title} className="w-[50px] h-[50px]" />
-            <Image src={img4} alt="doffay logo" className="absolute top-7 left-14" />
             <span className="text-base font-bold">{card.title}</span>
             <div className="absolute p-1.5 bg-white text-gray-400 rounded-full -right-2 top-[60px]">
               <ChevronRight size={24} />
             </div>
-          </div>
+          </Link>
         ))}
       </div>
 
-      {/* Mobile View: Swiper Slider */}
       <div className="md:hidden">
         <Swiper
           modules={[Pagination]}
@@ -72,16 +68,16 @@ export const SupportCenter: React.FC = () => {
         >
           {supportCards.map((card, index) => (
             <SwiperSlide key={index}>
-              <div
+              <Link
+                href="/faq"
                 className="rounded-[16px] p-[13px_20px] flex flex-col items-start justify-between bg-gradient-to-r from-[#f8f8f8] to-[#f8f8f8] hover:from-[#1cb4ec] hover:to-[#1c7fec] hover:text-white transition-shadow h-[155px] max-w-[210px] relative overflow-hidden"
               >
                 <Image src={card.img} alt={card.title} className="w-[50px] h-[50px]" />
-                <Image src={img4} alt="doffay logo" className="absolute top-7 left-10" />
                 <span className="text-base font-bold">{card.title}</span>
                 <div className="absolute p-1.5 bg-white text-gray-400 rounded-full -right-2 top-[60px]">
                   <ChevronRight size={24} />
                 </div>
-              </div>
+              </Link>
             </SwiperSlide>
           ))}
         </Swiper>

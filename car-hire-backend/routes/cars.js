@@ -15,27 +15,38 @@ module.exports = (db, upload) => {
   // 1) /api/cars/available
   // ------------------------------------------
  router.get("/available", (req, res) => {
-  const { startDate, endDate } = req.query;
-  if (!startDate || !endDate) {
-    return res.status(400).json({ error: "Missing startDate or endDate" });
+  const { startDate, startTime, endDate, endTime } = req.query;
+  if (!startDate || !startTime || !endDate || !endTime) {
+    return res.status(400).json({ error: "Missing reservation date or time" });
   }
 
   const sql = `
     SELECT * FROM cars 
     WHERE plate_number NOT IN (
       SELECT plate_number FROM reservations
-      WHERE (start_date <= ? AND end_date >= ?)
-      AND status IN ('Pending', 'Approved')
+      WHERE status IN ('Pending', 'Approved')
+        AND TIMESTAMP(start_date, start_time) < TIMESTAMP(?, ?)
+        AND TIMESTAMP(end_date, end_time) > TIMESTAMP(?, ?)
     )
+      AND plate_number NOT IN (
+        SELECT plate_number FROM car_unavailability
+        WHERE start_at < TIMESTAMP(?, ?)
+          AND (end_at IS NULL OR end_at > TIMESTAMP(?, ?))
+      )
+    ORDER BY car_name
   `;
 
-  db.query(sql, [endDate, startDate], (err, results) => {
+  db.query(
+    sql,
+    [endDate, endTime, startDate, startTime, endDate, endTime, startDate, startTime],
+    (err, results) => {
     if (err) {
       console.error("GET /api/cars/available error:", err);
       return res.status(500).send(err.message);
     }
-    res.json(results);
-  });
+      res.json(results);
+    }
+  );
 });
 
   // ------------------------------------------
@@ -67,16 +78,27 @@ module.exports = (db, upload) => {
       ),
       totalCars AS (
          SELECT COUNT(*) AS total FROM cars
+      ),
+      unavailableCars AS (
+         SELECT allDays.day, r.plate_number
+         FROM allDays
+         JOIN reservations r
+           ON r.status IN ('Pending','Approved')
+          AND r.start_date <= allDays.day
+          AND r.end_date >= allDays.day
+         UNION
+         SELECT allDays.day, cu.plate_number
+         FROM allDays
+         JOIN car_unavailability cu
+           ON cu.start_at < DATE_ADD(allDays.day, INTERVAL 1 DAY)
+          AND (cu.end_at IS NULL OR cu.end_at > allDays.day)
       )
       SELECT 
          allDays.day AS date,
-         totalCars.total - COUNT(r.id) AS freeCars
+         totalCars.total - COUNT(DISTINCT unavailableCars.plate_number) AS freeCars
       FROM allDays
       CROSS JOIN totalCars
-      LEFT JOIN reservations r
-             ON r.status IN ('Pending','Approved')
-            AND r.start_date <= allDays.day
-            AND r.end_date   >= allDays.day
+      LEFT JOIN unavailableCars ON unavailableCars.day = allDays.day
       GROUP BY allDays.day, totalCars.total
       ORDER BY allDays.day
     `;
@@ -98,7 +120,7 @@ module.exports = (db, upload) => {
   router.get("/caravailability/:plateNumber", (req, res) => {
     const plateNumber = req.params.plateNumber;
     const sql = `
-      SELECT start_date, end_date
+      SELECT start_date, start_time, end_date, end_time
         FROM reservations
        WHERE plate_number = ?
          AND status IN ('Pending','Approved')
@@ -112,7 +134,9 @@ module.exports = (db, upload) => {
 
       const bookedRanges = results.map(row => ({
         start: formatDate(row.start_date),
-        end:   formatDate(row.end_date)
+        startTime: String(row.start_time || "").slice(0, 5),
+        end: formatDate(row.end_date),
+        endTime: String(row.end_time || "").slice(0, 5),
       }));
 
       res.json(bookedRanges);
@@ -212,13 +236,13 @@ module.exports = (db, upload) => {
 
   // ------------------------------------------
   // 7) GET /api/cars/available-for-edit
-  //    GET ?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD&excludeReservationId=123
+  //    GET ?startDate=YYYY-MM-DD&startTime=HH:mm&endDate=YYYY-MM-DD&endTime=HH:mm&excludeReservationId=123
   // ------------------------------------------
   router.get("/available-for-edit", (req, res) => {
-    const { startDate, endDate, excludeReservationId } = req.query;
+    const { startDate, startTime, endDate, endTime, excludeReservationId } = req.query;
 
-    if (!startDate || !endDate) {
-      return res.status(400).json({ error: "Missing startDate or endDate" });
+    if (!startDate || !startTime || !endDate || !endTime) {
+      return res.status(400).json({ error: "Missing reservation date or time" });
     }
 
     const excludedId = Number(excludeReservationId || 0);
@@ -231,20 +255,32 @@ module.exports = (db, upload) => {
         FROM reservations
         WHERE id <> ?
           AND status IN ('Pending', 'Approved')
-          AND start_date <= ?
-          AND end_date >= ?
+          AND TIMESTAMP(start_date, start_time) < TIMESTAMP(?, ?)
+          AND TIMESTAMP(end_date, end_time) > TIMESTAMP(?, ?)
       )
+        AND plate_number NOT IN (
+          SELECT plate_number FROM car_unavailability
+          WHERE start_at < TIMESTAMP(?, ?)
+            AND (end_at IS NULL OR end_at > TIMESTAMP(?, ?))
+        )
       ORDER BY car_name
     `;
 
-    db.query(sql, [excludedId, endDate, startDate], (err, results) => {
+    db.query(
+      sql,
+      [
+        excludedId, endDate, endTime, startDate, startTime,
+        endDate, endTime, startDate, startTime,
+      ],
+      (err, results) => {
       if (err) {
         console.error("GET /api/cars/available-for-edit error:", err);
         return res.status(500).json({ error: "Server error checking availability" });
       }
 
-      res.json(results);
-    });
+        res.json(results);
+      }
+    );
   });
 
   // ------------------------------------------
@@ -267,17 +303,88 @@ module.exports = (db, upload) => {
   // ------------------------------------------
   // 8) DELETE /api/cars/:plateNumber
   // ------------------------------------------
-  router.delete("/:plateNumber", (req, res) => {
+  router.delete("/:plateNumber", async (req, res) => {
     const { plateNumber } = req.params;
-    db.query("DELETE FROM cars WHERE plate_number = ?", [plateNumber], (err, result) => {
-      if (err) {
-        return res.status(500).json({ success: false, message: "Server error" });
+    let connection;
+
+    try {
+      connection = await db.promise().getConnection();
+      await connection.beginTransaction();
+
+      const [carRows] = await connection.query(
+        "SELECT plate_number FROM cars WHERE plate_number = ? FOR UPDATE",
+        [plateNumber]
+      );
+
+      if (!carRows.length) {
+        await connection.rollback();
+        return res.status(404).json({
+          success: false,
+          message: "Car not found",
+        });
       }
-      if (result.affectedRows === 0) {
-        return res.status(404).json({ success: false, message: "Car not found" });
+
+      const [reservationRows] = await connection.query(
+        "SELECT id FROM reservations WHERE plate_number = ? FOR UPDATE",
+        [plateNumber]
+      );
+      const reservationIds = reservationRows.map((row) => row.id);
+
+      let deletedExtras = 0;
+      if (reservationIds.length) {
+        const [extrasResult] = await connection.query(
+          "DELETE FROM reservation_extras WHERE reservation_id IN (?)",
+          [reservationIds]
+        );
+        deletedExtras = extrasResult.affectedRows;
       }
-      res.json({ success: true, message: "Car removed successfully" });
-    });
+
+      const [reservationsResult] = await connection.query(
+        "DELETE FROM reservations WHERE plate_number = ?",
+        [plateNumber]
+      );
+      const [unavailabilityResult] = await connection.query(
+        "DELETE FROM car_unavailability WHERE plate_number = ?",
+        [plateNumber]
+      );
+      const [carResult] = await connection.query(
+        "DELETE FROM cars WHERE plate_number = ?",
+        [plateNumber]
+      );
+
+      if (carResult.affectedRows !== 1) {
+        throw new Error("Car was not deleted.");
+      }
+
+      await connection.commit();
+
+      return res.json({
+        success: true,
+        message: "Car and all related reservation data removed successfully",
+        deleted: {
+          cars: carResult.affectedRows,
+          reservations: reservationsResult.affectedRows,
+          reservation_extras: deletedExtras,
+          unavailability_periods: unavailabilityResult.affectedRows,
+        },
+      });
+    } catch (error) {
+      if (connection) {
+        try {
+          await connection.rollback();
+        } catch (rollbackError) {
+          console.error("Could not roll back car deletion:", rollbackError);
+        }
+      }
+
+      console.error(`Error deleting car ${plateNumber} and related data:`, error);
+      return res.status(500).json({
+        success: false,
+        message: "Could not remove the vehicle and its related reservations. Nothing was deleted.",
+      });
+    } finally {
+      if (connection) connection.release();
+    }
   });
 
   // Return the router

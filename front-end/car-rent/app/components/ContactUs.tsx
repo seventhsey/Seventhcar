@@ -1,12 +1,9 @@
 'use client'
-import { Mail, PhoneCall, Home, Clock, Check } from "lucide-react";
-import { useState } from "react";
+import { Mail, PhoneCall, Home, Clock } from "lucide-react";
 
 export default function ContactUs() {
-  const [isChecked, setIsChecked] = useState(false)
-
   return (
-    <div className="w-full bg-white pt-12 md:pt-32 -mb-8">
+    <section id="contact" className="w-full bg-white py-12 md:py-24 scroll-mt-24">
       <div className="max-w-6xl mx-auto px-4 md:px-0">
         <h2 className="text-start md:text-center text-[30px] md:text-4xl font-bold text-gray-800 mb-[50px] pl-6 md:pl-0">
           Contact us
@@ -87,10 +84,12 @@ export default function ContactUs() {
                   <p className="text-gray-700">
                     Info & Reservations{" "}
                   </p>
-                  <p className="text-blue-500 mb-1">+248 2502815</p>
+                  <p className="mb-1">
+                    <a className="text-blue-500" href="tel:+2482502815">+248 2502815</a>
+                  </p>
                   <p className="text-gray-700">
                     Support Center{" "}
-                    <span className="text-blue-500">+248 2502815</span>
+                    <a className="text-blue-500" href="tel:+2482502815">+248 2502815</a>
                   </p>
                 </div>
               </div>
@@ -119,45 +118,7 @@ export default function ContactUs() {
           </div>
         </div>
 
-        {/* Newsletter subscription */}
-        <div className="bg-white shadow-[0_0_25px_5px_rgba(0,0,0,0.05)] z-40 relative py-8 md:py-10 px-8 md:px-16 rounded-2xl">
-          <h3 className="text-[24px] font-bold text-gray-800 mb-6 md:mb-10">
-            Subscribe to our newsletter
-          </h3>
-
-          <div className="flex flex-col md:flex-row gap-6 md:gap-4">
-            <input
-              type="email"
-              className="flex-1 border border-gray-300 rounded-md p-3 focus:outline-none focus:border-[#1c7fec]"
-            />
-            <button className="bg-gradient-to-l to-[#1cb4ec] from-[#1c78ec] text-white px-6 py-3 md:py-2 rounded-md hover:to-[#1cea88] hover:from-[#17a932] transition-colors font-bold cursor-pointer">
-              Unsubscribe
-            </button>
-          </div>
-
-          <div className="mt-4 md:mt-8 md:mb-6 flex items-start gap-4">
-            <div
-              className={`flex-shrink-0 w-6 h-6 rounded cursor-pointer flex items-center justify-center ${
-                isChecked
-                  ? "bg-gradient-to-l to-[#1cb4ec] from-[#1c78ec]"
-                  : "bg-gray-200 border border-gray-300"
-              }`}
-              onClick={() => setIsChecked(!isChecked)}
-            >
-              {isChecked && <Check className="h-4 w-4 text-white" />}
-            </div>
-            <p className="text-xs">
-              We need your consent to be able to use your personal information
-              which we obtained when subscribing to the newsletter, read the
-              full
-              <a href="#" className="text-[#1c7fec] ml-1">
-                privacy policy
-              </a>{" "}
-              for more information.
-            </p>
-          </div>
-        </div>
       </div>
-    </div>
+    </section>
   );
 }

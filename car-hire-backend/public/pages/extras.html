@@ -1,38 +1,23 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Extras - Seventh Car Hire</title>
-
-  <!-- Bootstrap CSS -->
   <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet" />
-
-  <!-- Optional minimal styling -->
+  <link rel="stylesheet" href="/css/ui-feedback.css" />
   <style>
-    .extras-container {
-      margin-top: 100px;
-    }
-
-    .extras-card {
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      padding: 1rem;
-      margin-bottom: 1rem;
-    }
+    .extras-container { margin-top: 100px; }
+    .extras-card { border: 1px solid #ccc; border-radius: 4px; padding: 1rem; margin-bottom: 1rem; }
   </style>
 </head>
-
 <body>
-  <!-- NAVBAR (optional) -->
   <div id="navbar-placeholder"></div>
   <script>
     fetch("/partials/navbar.html")
       .then(response => response.text())
       .then(html => {
         document.getElementById("navbar-placeholder").innerHTML = html;
-        // If you have a navbar.js, load it here
         const script = document.createElement("script");
         script.src = "/js/navbar.js";
         document.body.appendChild(script);
@@ -45,43 +30,23 @@
       <h2>Manage Extras</h2>
       <button class="btn btn-success" id="addExtraBtn">Add New Extra</button>
     </div>
-    <div id="extrasContainer" class="row">
-      <!-- Extra "cards" will be rendered here by extras.js -->
-    </div>
+    <div id="extrasContainer" class="row"></div>
   </div>
 
-  <!-- MODAL for Add / Edit -->
   <div class="modal fade" id="extrasModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog">
       <div class="modal-content">
         <div class="modal-header">
           <h5 class="modal-title" id="extrasModalTitle">Add/Edit Extra</h5>
-          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-            <span aria-hidden="true">&times;</span>
-          </button>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
         </div>
         <div class="modal-body">
           <form id="extrasForm">
             <input type="hidden" id="extraId" />
-            <div class="form-group">
-              <label for="extraName">Name</label>
-              <input type="text" class="form-control" id="extraName" placeholder="Insurance, GPS, etc." />
-            </div>
-            <div class="form-group">
-              <label for="extraPrice">Price (EUR)</label>
-              <input type="number" step="0.01" class="form-control" id="extraPrice" placeholder="9.99" />
-            </div>
-            <div class="form-group">
-              <label for="extraDescription">Description</label>
-              <textarea class="form-control" id="extraDescription" rows="3"></textarea>
-            </div>
-            <div class="form-group">
-              <label>Charge Type</label>
-              <select class="form-control" id="extraChargeType">
-                <option value="daily">Daily charge</option>
-                <option value="once">One-time charge</option>
-              </select>
-            </div>
+            <div class="form-group"><label for="extraName">Name</label><input type="text" class="form-control" id="extraName" placeholder="Insurance, GPS, etc." /></div>
+            <div class="form-group"><label for="extraPrice">Price (EUR)</label><input type="number" step="0.01" class="form-control" id="extraPrice" placeholder="9.99" /></div>
+            <div class="form-group"><label for="extraDescription">Description</label><textarea class="form-control" id="extraDescription" rows="3"></textarea></div>
+            <div class="form-group"><label>Charge Type</label><select class="form-control" id="extraChargeType"><option value="daily">Daily charge</option><option value="once">One-time charge</option></select></div>
           </form>
         </div>
         <div class="modal-footer">
@@ -92,12 +57,9 @@
     </div>
   </div>
 
-  <!-- jQuery & Bootstrap JS -->
   <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
   <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
-
-  <!-- Our single JS file for extras logic -->
+  <script src="/js/ui-feedback.js"></script>
   <script src="/js/extras.js"></script>
 </body>
-
 </html>

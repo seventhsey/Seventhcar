@@ -8,8 +8,8 @@ import Image from 'next/image';
 const features = [
   {
     img: img1,
-    title: '5% Discount',
-    description: 'Prepay and benefit on rental',
+    title: 'Transparent Pricing',
+    description: 'See your total before submitting',
   },
   {
     img: img2,
@@ -23,8 +23,8 @@ const features = [
   },
   {
     img: img4,
-    title: 'Free Cancellation',
-    description: 'Cancel anytime before pickup',
+    title: 'Flexible Locations',
+    description: 'Airport, jetty, and custom pickup',
   },
 ];
 

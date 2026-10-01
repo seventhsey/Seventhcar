@@ -1,14 +1,11 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 "use client"
 
-import type React from "react"
 import { useEffect, useState } from "react"
 import { ChevronDown } from "lucide-react"
 import Image from "next/image"
 import locationIcon from "@/public/Assets/ico_location.svg"
 import calendarIcon1 from "@/public/Assets/ico_date1.svg"
 import calendarIcon2 from "@/public/Assets/ico_date2.svg"
-import ageDr from "@/public/Assets/age_driver.svg"
 import editIcon from "@/public/Assets/ico_edit.svg"
 import { useRouter } from "next/navigation"
 import DatePicker from "react-datepicker";
@@ -21,24 +18,24 @@ const ReservationForm = () => {
   const [pickupTime, setPickupTime] = useState("")
   const [returnDate, setReturnDate] = useState("")
   const [returnTime, setReturnTime] = useState("")
-  const [driverAge, setDriverAge] = useState("")
-  const images = ["/Assets/Mo-vew.jpg", "/Assets/black-car.webp", "/Assets/lsland-vew.webp"]
-  const [bgIndex, setBgIndex] = useState(0)
   const router = useRouter();
   const [selectedExtras, setSelectedExtras] = useState<number[]>([]);
 
-  // Helper: for react-datepicker to string and back
-  const parseDate = (val: string) => val ? new Date(val) : null;
-  const formatDate = (date: Date | null) =>
-    date ? date.toISOString().split("T")[0] : "";
+  // Keep calendar dates in local time. Converting local midnight through
+  // toISOString() can shift Seychelles dates to the previous UTC day.
+  const parseDate = (value: string) => {
+    if (!value) return null;
+    const [year, month, day] = value.split("-").map(Number);
+    return year && month && day ? new Date(year, month - 1, day) : null;
+  };
 
-  const handleBackgroundClick = () => {
-    setBgIndex((prev) => (prev + 1) % images.length)
-  }
-
-  const handleFormClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    e.stopPropagation()
-  }
+  const formatDate = (date: Date | null) => {
+    if (!date) return "";
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
 
   useEffect(() => {
     let newExtras: number[] = [...selectedExtras];
@@ -57,7 +54,7 @@ const ReservationForm = () => {
   }, [island, dropOff]);
 
   const handleSubmit = () => {
-    if (!island || !dropOff || !pickupDate || !pickupTime || !returnDate || !returnTime || !driverAge) {
+    if (!island || !dropOff || !pickupDate || !pickupTime || !returnDate || !returnTime) {
       alert("Please fill in all fields.")
       return
     }
@@ -69,7 +66,7 @@ const ReservationForm = () => {
       return
     }
     // Save reservation locally (for payment step later)
-    const reservation = { island, dropOff, pickupDate, pickupTime, returnDate, returnTime, driverAge, extras: selectedExtras }
+    const reservation = { island, dropOff, pickupDate, pickupTime, returnDate, returnTime, extras: selectedExtras }
     localStorage.setItem("pendingReservation", JSON.stringify(reservation))
     router.push("/vehicles");
   }
@@ -84,8 +81,7 @@ const ReservationForm = () => {
   return (
     <div
       className="w-full max-w-full overflow-x-hidden bg-cover bg-center flex flex-col items-center justify-center transition-all duration-500 px-4 md:px-0 py-24 md:py-28"
-      style={{ backgroundImage: `url(${images[bgIndex]})` }}
-      onClick={handleBackgroundClick}
+      style={{ backgroundImage: "url(/Assets/Mo-vew.jpg)" }}
     >
       <div className="max-w-4xl mx-auto text-center">
         <h3 className="text-[34px] leading-tight md:text-[50px] text-white font-bold md:mt-20 mb-24 md:mb-0 max-w-full break-words">
@@ -94,7 +90,6 @@ const ReservationForm = () => {
       </div>
       <div
         className="w-full max-w-[calc(100vw-2rem)] md:max-w-7xl mx-auto bg-white py-4 md:py-8 md:px-10 px-6 rounded-t-xl rounded-br-xl md:rounded-br-none backdrop-blur-md bg-opacity-90 flex flex-col"
-        onClick={handleFormClick}
       >
         {/* Island Selection */}
         <div className="mb-6">
@@ -109,7 +104,7 @@ const ReservationForm = () => {
               >
                 <option value="" disabled>Select location...</option>
                 <option value="Mahe Airport">Mahe Airport</option>
-                <option value="Cat Coco's Jetty">Cat Coco's Jetty</option>
+                <option value="Cat Coco's Jetty">Cat Coco&apos;s Jetty</option>
                 <option value="Other +25 Euro">Other +25 Euro</option>
               </select>
               <div className="absolute inset-y-0 -left-4 flex items-center pointer-events-none">
@@ -130,7 +125,7 @@ const ReservationForm = () => {
               >
                 <option value="" disabled>Select location...</option>
                 <option value="Mahe Airport">Mahe Airport</option>
-                <option value="Cat Coco's Jetty">Cat Coco's Jetty</option>
+                <option value="Cat Coco's Jetty">Cat Coco&apos;s Jetty</option>
                 <option value="Other +25 Euro">Other +25 Euro</option>
               </select>
               <div className="absolute inset-y-0 -left-4 flex items-center pointer-events-none">
@@ -234,31 +229,6 @@ const ReservationForm = () => {
                 <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none">
                   <ChevronDown className="h-4 w-4 text-gray-500" />
                 </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Driver's Age */}
-          <div className="w-full">
-            <label className="block text-sm font-bold mb-1">Driver&apos;s Age</label>
-            <div className="relative">
-              <select
-                value={driverAge}
-                onChange={(e) => setDriverAge(e.target.value)}
-                className="w-full appearance-none h-[65px] p-3 px-6 rounded-md focus:outline-none bg-[#f8f8f8]"
-              >
-                <option value="" disabled>Select driver&apos;s age</option>
-                <option value="18-21">18-21</option>
-                <option value="22-70">22-70</option>
-                <option value="70 and Above">70+</option>
-              </select>
-              <div className="absolute inset-y-0 -left-4 flex items-center pointer-events-none">
-                <div className="w-9 h-9 rounded-full bg-white flex items-center justify-center">
-                  <Image src={ageDr} alt="calendar icon" />
-                </div>
-              </div>
-              <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none">
-                <ChevronDown className="h-4 w-4 text-[#1c7fec]" />
               </div>
             </div>
           </div>

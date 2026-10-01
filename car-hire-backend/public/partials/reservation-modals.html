@@ -11,11 +11,15 @@
                 <p><strong>Email:</strong> <span id="modalEmail"></span></p>
                 <p><strong>Phone Number:</strong> <span id="modalPhone"></span></p>
                 <p><strong>Flight Number:</strong> <span id="modalFlightNumber"></span></p>
+                <p><strong>Pickup Location:</strong> <span id="modalPickupLocation"></span></p>
+                <p><strong>Drop-off Location:</strong> <span id="modalDropoffLocation"></span></p>
                 <p><strong>Notes:</strong> <span id="modalNotes"></span></p>
                 <p><strong>Plate Number:</strong> <span id="modalPlateNumber"></span></p>
                 <p><strong>Start Date:</strong> <span id="modalStartDate"></span></p>
                 <p><strong>End Date:</strong> <span id="modalEndDate"></span></p>
                 <p><strong>Price:</strong> €<span id="modalPrice"></span></p>
+                <p id="modalCalculatedPriceRow" style="display:none;"><strong>Calculated Price:</strong> €<span id="modalCalculatedPrice"></span></p>
+                <p id="modalPriceOverrideReasonRow" style="display:none;"><strong>Price Override Reason:</strong> <span id="modalPriceOverrideReason"></span></p>
                 <p><strong>Status:</strong> <span id="modalStatus"></span></p>
                 <label>Selected Extras:</label>
 <select id="extrasDropdown" class="form-control">
@@ -60,6 +64,14 @@
   <textarea class="form-control" id="editNotes" rows="3"></textarea>
 </div>
                     <div class="form-group">
+                        <label>Pickup Location</label>
+                        <input type="text" class="form-control" id="editPickupLocation" maxlength="255">
+                    </div>
+                    <div class="form-group">
+                        <label>Drop-off Location</label>
+                        <input type="text" class="form-control" id="editDropoffLocation" maxlength="255">
+                    </div>
+                    <div class="form-group">
                         <label>Customer Email</label>
                         <input type="text" class="form-control" id="editCustomerEmail" required>
                     </div>
@@ -86,8 +98,20 @@
                         <input type="time" class="form-control" id="editEndTime" required>
                     </div>  
                     <div class="form-group">
-                        <label>Total Price (€)</label>
-                        <input type="number" class="form-control" id="editTotalPrice" required>
+                        <label>Calculated Price (€)</label>
+                        <input type="number" class="form-control" id="editTotalPrice" readonly>
+                    </div>
+                    <div class="form-check mb-3">
+                        <input type="checkbox" class="form-check-input" id="enablePriceOverride">
+                        <label class="form-check-label" for="enablePriceOverride">Use a manual final price</label>
+                    </div>
+                    <div class="form-group">
+                        <label>Manual Final Price (€)</label>
+                        <input type="number" min="0" step="0.01" class="form-control" id="editPriceOverride" disabled>
+                    </div>
+                    <div class="form-group">
+                        <label>Price Override Reason</label>
+                        <input type="text" maxlength="255" class="form-control" id="editPriceOverrideReason" disabled placeholder="Example: Breakdown compensation">
                     </div>
                     <div class="form-group">
                         <label>Status</label>
@@ -116,5 +140,3 @@
         </div>
     </div>
 </div>
-
-

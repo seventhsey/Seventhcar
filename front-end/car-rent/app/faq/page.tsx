@@ -5,7 +5,7 @@ import { useState } from "react";
 const faqs = [
   {
     question: "What types of cars do you offer for rent?",
-    answer: `We offer a wide range of vehicles including economical cars, hybrids, SUVs, minivans, and electric vehicles. Our fleet includes models like Renault Kwid, Kia Picanto, Suzuki Hustler, Honda Vezel, Hyundai Kona EV, and more — all designed for comfort, safety, and efficiency.`,
+    answer: `Our current fleet is shown on the Vehicles page. Availability depends on your selected pickup and return dates.`,
   },
   {
     question: "What is the minimum age requirement for renting a car?",
@@ -20,7 +20,7 @@ const faqs = [
   {
     question: "What are your rental rates and payment options?",
     answer:
-      "Rates start from €35/day (minimum 3 days). Payment options include cash, bank transfer, card (+3%), and PayPal (+5%).",
+      "Rates depend on the selected vehicle, rental length, protection plan, and extras. The full calculated total is shown before you submit the reservation. Payment is currently made on arrival.",
   },
   {
     question: "Is insurance included in the rental price?",
@@ -35,7 +35,7 @@ const faqs = [
   {
     question: "What is your cancellation policy?",
     answer:
-      "You can cancel your reservation anytime free of charge.",
+      "Contact us as early as possible if your plans change. Our team will confirm the applicable cancellation conditions for your reservation.",
   },
   {
     question: "Do you offer airport or hotel delivery?",
@@ -65,12 +65,12 @@ const faqs = [
   {
     question: "Can I add an additional driver?",
     answer:
-      "Yes, additional drivers are allowed (21+ with valid license). €5/day applies.",
+      "Additional drivers may be permitted if they meet the licence and age requirements. Please include the request in your reservation notes so our team can confirm it.",
   },
   {
     question: "Do you provide child seats?",
     answer:
-      "Yes, child seats are provided free of charge.",
+      "Yes. Available baby and child seats can be selected as paid extras during booking, subject to availability.",
   },
   {
     question: "What should I do in case of a breakdown?",
@@ -85,17 +85,17 @@ const faqs = [
   {
     question: "What are speed limits in Seychelles?",
     answer:
-      "Typically 40 km/h, and up to 80 km/h on highways.",
+      "Speed limits vary by road and location. Always follow the posted signs and local traffic rules.",
   },
   {
     question: "Which islands do you operate in?",
     answer:
-      "We operate on Mahe and Praslin.",
+      "Our online booking locations currently focus on Mahé. Contact us before booking if you need arrangements elsewhere.",
   },
   {
     question: "Can I rent a car for 1 day?",
     answer:
-      "Minimum rental period is 3 days.",
+      "The booking system accepts one-day rentals. The displayed daily rate is adjusted according to the rental length.",
   },
 ];
 
