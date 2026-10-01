@@ -326,6 +326,7 @@ const extrasRoutes = require("./routes/extras");
 const quotesRoutes = require("./routes/quotes");
 const validateReservationPricing = require("./middleware/validateReservationPricing");
 const sendReservationEmails = require("./middleware/sendReservationEmails");
+const { initializeSchema } = require("./services/schemaMigrations");
 
 app.use("/api/cars", (req, res, next) => {
   if (req.method === "GET") return next();
@@ -349,6 +350,13 @@ app.use("/api/extras", (req, res, next) => {
 });
 app.use("/api/extras", extrasRoutes(db));
 
-app.listen(port, () => {
-  console.log(`Server running on http://localhost:${port}`);
-});
+initializeSchema(db)
+  .then(() => {
+    app.listen(port, () => {
+      console.log(`Server running on http://localhost:${port}`);
+    });
+  })
+  .catch((error) => {
+    console.error("Database schema initialization failed:", error);
+    process.exitCode = 1;
+  });

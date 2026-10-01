@@ -2,7 +2,9 @@ const { sendReservationEmails } = require("../services/emailService");
 
 module.exports = function reservationEmailMiddleware(req, res, next) {
   const isCreateReservation = req.method === "POST" && req.path === "/";
-  if (!isCreateReservation) return next();
+  const isCustomerUpdate =
+    req.method === "PUT" && /^\/\d+$/.test(req.path) && !req.session.userId;
+  if (!isCreateReservation && !isCustomerUpdate) return next();
 
   const originalJson = res.json.bind(res);
 
@@ -21,6 +23,7 @@ module.exports = function reservationEmailMiddleware(req, res, next) {
             reservationId: body.reservationId,
             reservation,
             quote: req.calculatedQuote,
+            eventType: isCustomerUpdate ? "updated" : "created",
           });
 
           if (!result.configured) {
@@ -37,7 +40,7 @@ module.exports = function reservationEmailMiddleware(req, res, next) {
             );
           } else {
             console.log(
-              `Reservation #${body.reservationId} confirmation emails sent.`
+              `Reservation #${body.reservationId} ${isCustomerUpdate ? "update" : "creation"} emails sent.`
             );
           }
         } catch (error) {

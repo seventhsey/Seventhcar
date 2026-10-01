@@ -209,6 +209,8 @@ export default function Contact() {
             start_time: confirmed.start_time,
             end_date: confirmed.end_date,
             end_time: confirmed.end_time,
+            pickup_location: (confirmed.pickup_location || "").trim(),
+            dropoff_location: (confirmed.dropoff_location || "").trim(),
             status: "Pending",
             notes: confirmed.notes || "",
             extras: confirmed.extras.map((extra) => ({

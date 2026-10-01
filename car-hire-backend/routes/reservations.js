@@ -297,43 +297,61 @@ module.exports = (db, { createReservationEditToken } = {}) => {
     );
   });
 
-  router.post("/", (req, res) => {
+  router.post("/", async (req, res) => {
     const {
       customer_name, customer_email, customer_phone, flight_number, plate_number,
-      start_date, start_time, end_date, end_time, total_price, status, extras, notes
+      start_date, start_time, end_date, end_time, pickup_location, dropoff_location,
+      total_price, status, extras, notes
     } = req.body;
     const allowedStatuses = new Set(["Pending", "Approved", "Completed", "Cancelled"]);
     const safeStatus =
       req.session.userId && allowedStatuses.has(status) ? status : "Pending";
+    let connection;
 
-    db.query(
-      `INSERT INTO reservations
-       (customer_name, customer_email, customer_phone, flight_number, plate_number,
-       start_date, start_time, end_date, end_time, total_price, status, notes)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [customer_name, customer_email, customer_phone, flight_number, plate_number,
-        start_date, start_time, end_date, end_time, total_price, safeStatus, notes || ""],
-      (err, result) => {
-        if (err) return res.status(500).json({ error: "Server error creating reservation." });
+    try {
+      connection = await db.promise().getConnection();
+      await connection.beginTransaction();
 
-        const reservationId = result.insertId;
+      const [result] = await connection.query(
+        `INSERT INTO reservations
+         (customer_name, customer_email, customer_phone, flight_number, plate_number,
+          start_date, start_time, end_date, end_time, pickup_location, dropoff_location,
+          total_price, status, notes)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          customer_name, customer_email, customer_phone, flight_number, plate_number,
+          start_date, start_time, end_date, end_time, pickup_location || "",
+          dropoff_location || "", total_price, safeStatus, notes || ""
+        ]
+      );
 
-        if (extras && extras.length > 0) {
-          const extraQueries = extras.map(extra => [
-            reservationId, extra.extra_id, extra.days, extra.price_at_booking
-          ]);
-
-          db.query(
-            `INSERT INTO reservation_extras (reservation_id, extra_id, days, price_at_booking) VALUES ?`,
-            [extraQueries],
-            (extrasErr) => {
-              if (extrasErr) console.error("Error inserting extras:", extrasErr);
-            }
-          );
-        }
-        res.json({ success: true, reservationId });
+      const reservationId = result.insertId;
+      if (Array.isArray(extras) && extras.length > 0) {
+        const extraRows = extras.map((extra) => [
+          reservationId, extra.extra_id, extra.days, extra.price_at_booking
+        ]);
+        await connection.query(
+          `INSERT INTO reservation_extras
+           (reservation_id, extra_id, days, price_at_booking) VALUES ?`,
+          [extraRows]
+        );
       }
-    );
+
+      await connection.commit();
+      return res.json({ success: true, reservationId });
+    } catch (error) {
+      if (connection) {
+        try {
+          await connection.rollback();
+        } catch (rollbackError) {
+          console.error("Reservation creation rollback failed:", rollbackError);
+        }
+      }
+      console.error("Reservation creation failed:", error);
+      return res.status(500).json({ error: "Server error creating reservation." });
+    } finally {
+      if (connection) connection.release();
+    }
   });
 
   // Dedicated status change endpoint. This never recalculates pricing or touches extras.
@@ -402,64 +420,75 @@ module.exports = (db, { createReservationEditToken } = {}) => {
     );
   });
 
-  router.put("/:id", (req, res) => {
-    const reservationId = req.params.id;
+  router.put("/:id", async (req, res) => {
+    const reservationId = Number(req.params.id);
     const {
       customer_name, customer_email, customer_phone, flight_number, plate_number,
-      start_date, start_time, end_date, end_time, total_price, status, extras, notes
+      start_date, start_time, end_date, end_time, pickup_location, dropoff_location,
+      total_price, status, extras, notes
     } = req.body;
     const allowedStatuses = new Set(["Pending", "Approved", "Completed", "Cancelled"]);
     const safeStatus =
       req.session.userId && allowedStatuses.has(status) ? status : "Pending";
+    let connection;
 
-    db.query(
-      `UPDATE reservations SET
-       customer_name=?, customer_email=?, customer_phone=?, flight_number=?, plate_number=?,
-       start_date=?, start_time=?, end_date=?, end_time=?, total_price=?, status=?, notes=?
-       WHERE id=?`,
-      [
-        customer_name,
-        customer_email,
-        customer_phone,
-        flight_number,
-        plate_number,
-        start_date,
-        start_time,
-        end_date,
-        end_time,
-        total_price,
-        safeStatus,
-        notes || "",
-        reservationId
-      ],
-      (err) => {
-        if (err) return res.status(500).json({ error: "Server error updating reservation." });
+    try {
+      connection = await db.promise().getConnection();
+      await connection.beginTransaction();
 
-        db.query(
-          `DELETE FROM reservation_extras WHERE reservation_id = ?`,
-          [reservationId],
-          (deleteErr) => {
-            if (deleteErr) console.error("Error deleting extras:", deleteErr);
-
-            if (extras && extras.length > 0) {
-              const extraQueries = extras.map(extra => [
-                reservationId, extra.extra_id, extra.days, extra.price_at_booking
-              ]);
-
-              db.query(
-                `INSERT INTO reservation_extras (reservation_id, extra_id, days, price_at_booking) VALUES ?`,
-                [extraQueries],
-                (insertErr) => {
-                  if (insertErr) console.error("Error inserting extras:", insertErr);
-                }
-              );
-            }
-          }
-        );
-
-        res.json({ success: true, reservationId });
+      const [existingRows] = await connection.query(
+        "SELECT id FROM reservations WHERE id = ? FOR UPDATE",
+        [reservationId]
+      );
+      if (!existingRows.length) {
+        await connection.rollback();
+        return res.status(404).json({ error: "Reservation not found." });
       }
-    );
+
+      await connection.query(
+        `UPDATE reservations SET
+         customer_name=?, customer_email=?, customer_phone=?, flight_number=?, plate_number=?,
+         start_date=?, start_time=?, end_date=?, end_time=?, pickup_location=?,
+         dropoff_location=?, total_price=?, status=?, notes=?
+         WHERE id=?`,
+        [
+          customer_name, customer_email, customer_phone, flight_number, plate_number,
+          start_date, start_time, end_date, end_time, pickup_location || "",
+          dropoff_location || "", total_price, safeStatus, notes || "", reservationId
+        ]
+      );
+
+      await connection.query(
+        "DELETE FROM reservation_extras WHERE reservation_id = ?",
+        [reservationId]
+      );
+
+      if (Array.isArray(extras) && extras.length > 0) {
+        const extraRows = extras.map((extra) => [
+          reservationId, extra.extra_id, extra.days, extra.price_at_booking
+        ]);
+        await connection.query(
+          `INSERT INTO reservation_extras
+           (reservation_id, extra_id, days, price_at_booking) VALUES ?`,
+          [extraRows]
+        );
+      }
+
+      await connection.commit();
+      return res.json({ success: true, reservationId });
+    } catch (error) {
+      if (connection) {
+        try {
+          await connection.rollback();
+        } catch (rollbackError) {
+          console.error("Reservation update rollback failed:", rollbackError);
+        }
+      }
+      console.error("Reservation update failed:", error);
+      return res.status(500).json({ error: "Server error updating reservation." });
+    } finally {
+      if (connection) connection.release();
+    }
   });
 
   router.delete("/:id", (req, res) => {

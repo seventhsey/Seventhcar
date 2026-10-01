@@ -33,34 +33,76 @@ document.addEventListener("DOMContentLoaded", function () {
   const statusSelect = document.getElementById("filterStatus");
   const sortableHeaders = Array.from(document.querySelectorAll("th.sortable"));
 
+  function appendTextCell(row, value, className = "") {
+    const cell = document.createElement("td");
+    cell.textContent = String(value ?? "");
+    if (className) cell.className = className;
+    row.appendChild(cell);
+    return cell;
+  }
+
   function buildExtrasDropdown(extras, diffDays) {
-    const options = extras.map(extra => {
+    const dropdown = document.createElement("select");
+    dropdown.className = "form-control form-control-sm";
+
+    if (!extras.length) {
+      const option = document.createElement("option");
+      option.textContent = "No extras";
+      dropdown.appendChild(option);
+      return dropdown;
+    }
+
+    extras.forEach(extra => {
       const price = extra.charge_type === "once"
         ? Number(extra.price_at_booking ?? extra.price ?? 0)
         : Number(extra.price_at_booking ?? extra.price ?? 0) * diffDays;
-      return `<option>${extra.name} | ${extra.charge_type === "once" ? "one-time" : `${diffDays} day(s)`} | €${price.toFixed(2)}</option>`;
-    }).join("");
-    return `<select class="form-control form-control-sm">${options || "<option>No extras</option>"}</select>`;
+      const option = document.createElement("option");
+      option.textContent = `${extra.name || `Extra ${extra.extra_id}`} | ${extra.charge_type === "once" ? "one-time" : `${diffDays} day(s)`} | €${price.toFixed(2)}`;
+      dropdown.appendChild(option);
+    });
+
+    return dropdown;
   }
 
-  function renderRow(reservation, extrasDropdown) {
-    return `
-      <td>${reservation.id}</td>
-      <td>${reservation.customer_name}</td>
-      <td>${reservation.customer_phone || ""}</td>
-      <td>${reservation.plate_number}</td>
-      <td>${formatDateLong(reservation.start_date)}</td>
-      <td>${String(reservation.start_time || "").slice(0,5)}</td>
-      <td>${formatDateLong(reservation.end_date)}</td>
-      <td>${String(reservation.end_time || "").slice(0,5)}</td>
-      <td>${extrasDropdown}</td>
-      <td>€${Number(reservation.total_price || 0).toFixed(2)}</td>
-      <td class="status-${String(reservation.status || "").toLowerCase()}">${reservation.status}</td>
-      <td>
-        <button class="btn btn-primary btn-sm view-btn" data-id="${reservation.id}">View</button>
-        <button class="btn btn-danger btn-sm delete-btn" data-id="${reservation.id}">Delete</button>
-      </td>
-    `;
+  function buildReservationRow(reservation, diffDays) {
+    const row = document.createElement("tr");
+    appendTextCell(row, reservation.id);
+    appendTextCell(row, reservation.customer_name);
+    appendTextCell(row, reservation.customer_phone || "");
+    appendTextCell(row, reservation.plate_number);
+    appendTextCell(row, formatDateLong(reservation.start_date));
+    appendTextCell(row, String(reservation.start_time || "").slice(0, 5));
+    appendTextCell(row, formatDateLong(reservation.end_date));
+    appendTextCell(row, String(reservation.end_time || "").slice(0, 5));
+
+    const extrasCell = document.createElement("td");
+    extrasCell.appendChild(buildExtrasDropdown(reservation.extras || [], diffDays));
+    row.appendChild(extrasCell);
+
+    appendTextCell(row, `€${Number(reservation.total_price || 0).toFixed(2)}`);
+    const safeStatus = ["Pending", "Approved", "Completed", "Cancelled"].includes(reservation.status)
+      ? reservation.status
+      : "Pending";
+    appendTextCell(row, safeStatus, `status-${safeStatus.toLowerCase()}`);
+
+    const actionsCell = document.createElement("td");
+    const viewButton = document.createElement("button");
+    viewButton.type = "button";
+    viewButton.className = "btn btn-primary btn-sm view-btn";
+    viewButton.dataset.id = String(reservation.id);
+    viewButton.textContent = "View";
+    actionsCell.appendChild(viewButton);
+    actionsCell.appendChild(document.createTextNode(" "));
+
+    const deleteButton = document.createElement("button");
+    deleteButton.type = "button";
+    deleteButton.className = "btn btn-danger btn-sm delete-btn";
+    deleteButton.dataset.id = String(reservation.id);
+    deleteButton.textContent = "Delete";
+    actionsCell.appendChild(deleteButton);
+    row.appendChild(actionsCell);
+
+    return row;
   }
 
   function applyFiltersSort(list) {
@@ -106,7 +148,7 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   function renderTable() {
-    tableBody.innerHTML = "";
+    tableBody.replaceChildren();
     const list = applyFiltersSort(ALL);
 
     for (const reservation of list) {
@@ -116,10 +158,7 @@ document.addEventListener("DOMContentLoaded", function () {
         reservation.end_date,
         reservation.end_time
       );
-      const dropdown = buildExtrasDropdown(reservation.extras || [], diff);
-      const tr = document.createElement("tr");
-      tr.innerHTML = renderRow(reservation, dropdown);
-      tableBody.appendChild(tr);
+      tableBody.appendChild(buildReservationRow(reservation, diff));
     }
   }
 

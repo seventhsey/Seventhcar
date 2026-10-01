@@ -344,8 +344,9 @@ function buildExtrasRows(quote) {
     .join("");
 }
 
-function buildCustomerEmail({ reservationId, reservation, quote }) {
+function buildCustomerEmail({ reservationId, reservation, quote, eventType }) {
   const config = getEmailConfig();
+  const isUpdate = eventType === "updated";
   const firstName = cleanHeaderValue(reservation.customer_name).split(/\s+/)[0];
   const manageUrl = config.frontendUrl
     ? `${config.frontendUrl}/manage-reservation`
@@ -356,7 +357,9 @@ function buildCustomerEmail({ reservationId, reservation, quote }) {
   const text = [
     `Hello ${firstName || "there"},`,
     "",
-    "We have received your reservation request.",
+    isUpdate
+      ? "We have received your reservation changes."
+      : "We have received your reservation request.",
     `Reference: #${reservationId}`,
     `Vehicle: ${quote?.vehicle?.name || "Selected vehicle"}`,
     `Pickup: ${formatDate(reservation.start_date)} at ${formatTime(
@@ -369,7 +372,9 @@ function buildCustomerEmail({ reservationId, reservation, quote }) {
     `Total: ${formatMoney(quote?.total)}`,
     "Payment: Pay on arrival",
     "",
-    "Your reservation is currently pending. Our team will contact you to confirm the final arrangements.",
+    isUpdate
+      ? "Your updated reservation is pending review. Our team will contact you to confirm the changes."
+      : "Your reservation is currently pending. Our team will contact you to confirm the final arrangements.",
     manageUrl ? `Manage reservation: ${manageUrl}` : "",
     "",
     `Contact: ${config.replyTo} | ${config.companyPhone}`,
@@ -385,13 +390,16 @@ function buildCustomerEmail({ reservationId, reservation, quote }) {
       <div style="background:#ffffff;border-radius:18px;overflow:hidden;box-shadow:0 8px 30px rgba(16,24,40,.08);">
         <div style="background:linear-gradient(135deg,#1c78ec,#1cb4ec);padding:28px 32px;color:white;">
           <div style="font-size:13px;letter-spacing:.08em;text-transform:uppercase;opacity:.9;">Seventh Seychelles Car Rental</div>
-          <h1 style="margin:10px 0 0;font-size:28px;">Reservation request received</h1>
+          <h1 style="margin:10px 0 0;font-size:28px;">${isUpdate ? "Reservation changes received" : "Reservation request received"}</h1>
         </div>
         <div style="padding:30px 32px;">
           <p style="margin-top:0;font-size:16px;line-height:1.6;">Hello ${escapeHtml(
             firstName || "there"
           )},</p>
-          <p style="font-size:15px;line-height:1.65;color:#475467;">Thank you for choosing us. We have received your booking request and will contact you shortly to confirm the final arrangements.</p>
+          <p style="font-size:15px;line-height:1.65;color:#475467;">${isUpdate
+            ? "We have received your requested changes. Your reservation is pending review, and our team will contact you to confirm the updated arrangements."
+            : "Thank you for choosing us. We have received your booking request and will contact you shortly to confirm the final arrangements."
+          }</p>
 
           <div style="background:#f0f7ff;border:1px solid #cfe5ff;border-radius:14px;padding:18px 20px;margin:24px 0;">
             <div style="font-size:13px;color:#475467;">Reservation reference</div>
@@ -450,21 +458,24 @@ function buildCustomerEmail({ reservationId, reservation, quote }) {
 </html>`;
 
   return {
-    subject: `Reservation received — #${reservationId}`,
+    subject: isUpdate
+      ? `Reservation changes received — #${reservationId}`
+      : `Reservation received — #${reservationId}`,
     text,
     html,
   };
 }
 
-function buildBusinessEmail({ reservationId, reservation, quote }) {
+function buildBusinessEmail({ reservationId, reservation, quote, eventType }) {
   const config = getEmailConfig();
+  const isUpdate = eventType === "updated";
   const pickupLocation = cleanHeaderValue(reservation.pickup_location);
   const dropoffLocation = cleanHeaderValue(reservation.dropoff_location);
   const notes = cleanHeaderValue(reservation.notes);
   const flightNumber = cleanHeaderValue(reservation.flight_number);
 
   const text = [
-    `New reservation #${reservationId}`,
+    `${isUpdate ? "Reservation changed" : "New reservation"} #${reservationId}`,
     "",
     `Customer: ${cleanHeaderValue(reservation.customer_name)}`,
     `Email: ${cleanHeaderValue(reservation.customer_email)}`,
@@ -500,10 +511,13 @@ function buildBusinessEmail({ reservationId, reservation, quote }) {
 <html>
   <body style="margin:0;padding:24px;background:#f4f7fb;font-family:Arial,sans-serif;color:#101828;">
     <div style="max-width:720px;margin:auto;background:#fff;border-radius:16px;padding:28px;box-shadow:0 8px 30px rgba(16,24,40,.08);">
-      <h1 style="margin:0 0 6px;font-size:26px;color:#1570ef;">New reservation #${escapeHtml(
+      <h1 style="margin:0 0 6px;font-size:26px;color:#1570ef;">${isUpdate ? "Reservation changed" : "New reservation"} #${escapeHtml(
         reservationId
       )}</h1>
-      <p style="margin:0 0 24px;color:#667085;">A new pending booking was submitted through the website.</p>
+      <p style="margin:0 0 24px;color:#667085;">${isUpdate
+        ? "A customer changed this reservation. It has returned to Pending and requires review."
+        : "A new pending booking was submitted through the website."
+      }</p>
       <table role="presentation" style="width:100%;border-collapse:collapse;font-size:14px;">
         <tr><td style="padding:8px;color:#667085;width:34%;">Customer</td><td style="padding:8px;font-weight:600;">${escapeHtml(
           reservation.customer_name
@@ -559,7 +573,7 @@ function buildBusinessEmail({ reservationId, reservation, quote }) {
 </html>`;
 
   return {
-    subject: `New website reservation #${reservationId} — ${cleanHeaderValue(
+    subject: `${isUpdate ? "Reservation changed" : "New website reservation"} #${reservationId} — ${cleanHeaderValue(
       reservation.customer_name
     )}`,
     text,
@@ -567,7 +581,12 @@ function buildBusinessEmail({ reservationId, reservation, quote }) {
   };
 }
 
-async function sendReservationEmails({ reservationId, reservation, quote }) {
+async function sendReservationEmails({
+  reservationId,
+  reservation,
+  quote,
+  eventType = "created",
+}) {
   if (!isEmailConfigured()) {
     return {
       configured: false,
@@ -587,6 +606,7 @@ async function sendReservationEmails({ reservationId, reservation, quote }) {
       reservationId,
       reservation,
       quote,
+      eventType,
     });
     await sendGmailMessage({
       to: reservation.customer_email,
@@ -602,6 +622,7 @@ async function sendReservationEmails({ reservationId, reservation, quote }) {
       reservationId,
       reservation,
       quote,
+      eventType,
     });
     await sendGmailMessage({
       to: config.businessRecipients,

@@ -22,6 +22,8 @@ type Reservation = {
   start_time: string;
   end_date: string;
   end_time: string;
+  pickup_location?: string;
+  dropoff_location?: string;
   total_price: number;
   status: string;
   notes?: string;
@@ -82,6 +84,8 @@ export default function ManageReservationPage() {
   const [startTime, setStartTime] = useState("");
   const [endDate, setEndDate] = useState("");
   const [endTime, setEndTime] = useState("");
+  const [pickupLocation, setPickupLocation] = useState("");
+  const [dropoffLocation, setDropoffLocation] = useState("");
 
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -246,6 +250,8 @@ export default function ManageReservationPage() {
       setStartTime(shortTime(loaded.start_time));
       setEndDate(loaded.end_date || "");
       setEndTime(shortTime(loaded.end_time));
+      setPickupLocation(loaded.pickup_location || "");
+      setDropoffLocation(loaded.dropoff_location || "");
 
       const extras = Array.isArray(result.extras) ? result.extras : [];
       setSelectedExtras(
@@ -345,6 +351,8 @@ export default function ManageReservationPage() {
           start_time: startTime,
           end_date: endDate,
           end_time: endTime,
+          pickup_location: pickupLocation.trim(),
+          dropoff_location: dropoffLocation.trim(),
           total_price: quote.total,
           status: "Pending",
           notes: notes.trim(),
@@ -407,6 +415,10 @@ export default function ManageReservationPage() {
                 <Field label="Pickup time"><input type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} className="w-full border rounded-lg p-3 text-black" /></Field>
                 <Field label="Return date"><input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="w-full border rounded-lg p-3 text-black" /></Field>
                 <Field label="Return time"><input type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} className="w-full border rounded-lg p-3 text-black" /></Field>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                <Field label="Pickup location"><input value={pickupLocation} onChange={(e) => setPickupLocation(e.target.value)} className="w-full border rounded-lg p-3 text-black" /></Field>
+                <Field label="Drop-off location"><input value={dropoffLocation} onChange={(e) => setDropoffLocation(e.target.value)} className="w-full border rounded-lg p-3 text-black" /></Field>
               </div>
             </section>
 

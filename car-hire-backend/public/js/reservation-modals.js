@@ -103,6 +103,8 @@ document.addEventListener("DOMContentLoaded", function () {
         document.getElementById("modalEmail").innerText = reservation.customer_email || "-";
         document.getElementById("modalPhone").innerText = reservation.customer_phone || "-";
         document.getElementById("modalFlightNumber").innerText = reservation.flight_number || "-";
+        document.getElementById("modalPickupLocation").innerText = reservation.pickup_location || "-";
+        document.getElementById("modalDropoffLocation").innerText = reservation.dropoff_location || "-";
         document.getElementById("modalNotes").innerText = reservation.notes || "-";
         document.getElementById("modalPlateNumber").innerText = reservation.plate_number;
         document.getElementById("modalStartDate").innerText = reservation.start_date;
@@ -178,6 +180,8 @@ document.addEventListener("DOMContentLoaded", function () {
               document.getElementById("editCustomerEmail").value = reservation.customer_email;
               document.getElementById("editCustomerPhone").value = reservation.customer_phone;
               document.getElementById("editFlightNumber").value = reservation.flight_number || "";
+              document.getElementById("editPickupLocation").value = reservation.pickup_location || "";
+              document.getElementById("editDropoffLocation").value = reservation.dropoff_location || "";
               document.getElementById("editNotes").value = reservation.notes || "";
               document.getElementById("editStartDate").value = reservation.start_date;
               document.getElementById("editStartTime").value = reservation.start_time;
@@ -263,6 +267,8 @@ document.addEventListener("DOMContentLoaded", function () {
       customer_email: document.getElementById("editCustomerEmail").value,
       customer_phone: document.getElementById("editCustomerPhone").value,
       flight_number: document.getElementById("editFlightNumber").value,
+      pickup_location: document.getElementById("editPickupLocation").value,
+      dropoff_location: document.getElementById("editDropoffLocation").value,
       notes: document.getElementById("editNotes").value,
       plate_number: plateNumber,
       start_date: startDate,
