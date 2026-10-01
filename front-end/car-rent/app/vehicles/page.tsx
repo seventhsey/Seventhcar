@@ -30,7 +30,9 @@ type ApiCar = {
 
 type PendingReservation = {
   pickupDate?: string;
+  pickupTime?: string;
   returnDate?: string;
+  returnTime?: string;
 };
 
 export default function Vehicles() {
@@ -82,10 +84,17 @@ export default function Vehicles() {
       if (storedReservation) {
         try {
           const reservation = JSON.parse(storedReservation) as PendingReservation;
-          if (reservation.pickupDate && reservation.returnDate) {
+          if (
+            reservation.pickupDate &&
+            reservation.pickupTime &&
+            reservation.returnDate &&
+            reservation.returnTime
+          ) {
             const params = new URLSearchParams({
               startDate: reservation.pickupDate,
+              startTime: reservation.pickupTime,
               endDate: reservation.returnDate,
+              endTime: reservation.returnTime,
             });
             fetchUrl = `${apiUrl}/cars/available?${params.toString()}`;
           }

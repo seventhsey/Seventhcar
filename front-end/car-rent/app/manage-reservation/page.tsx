@@ -116,7 +116,7 @@ export default function ManageReservationPage() {
   }, [apiUrl]);
 
   useEffect(() => {
-    if (!reservation || !startDate || !endDate) return;
+    if (!reservation || !startDate || !startTime || !endDate || !endTime) return;
     const currentReservationId = reservation.id;
 
     const controller = new AbortController();
@@ -125,7 +125,9 @@ export default function ManageReservationPage() {
       try {
         const params = new URLSearchParams({
           startDate,
+          startTime,
           endDate,
+          endTime,
           excludeReservationId: String(currentReservationId),
         });
         const response = await fetch(
@@ -156,7 +158,7 @@ export default function ManageReservationPage() {
 
     checkAvailability();
     return () => controller.abort();
-  }, [apiUrl, reservation, startDate, endDate]);
+  }, [apiUrl, reservation, startDate, startTime, endDate, endTime]);
 
   const quoteInput = useMemo(
     () => ({

@@ -15,21 +15,23 @@ module.exports = (db, upload) => {
   // 1) /api/cars/available
   // ------------------------------------------
  router.get("/available", (req, res) => {
-  const { startDate, endDate } = req.query;
-  if (!startDate || !endDate) {
-    return res.status(400).json({ error: "Missing startDate or endDate" });
+  const { startDate, startTime, endDate, endTime } = req.query;
+  if (!startDate || !startTime || !endDate || !endTime) {
+    return res.status(400).json({ error: "Missing reservation date or time" });
   }
 
   const sql = `
     SELECT * FROM cars 
     WHERE plate_number NOT IN (
       SELECT plate_number FROM reservations
-      WHERE (start_date <= ? AND end_date >= ?)
-      AND status IN ('Pending', 'Approved')
+      WHERE status IN ('Pending', 'Approved')
+        AND TIMESTAMP(start_date, start_time) < TIMESTAMP(?, ?)
+        AND TIMESTAMP(end_date, end_time) > TIMESTAMP(?, ?)
     )
+    ORDER BY car_name
   `;
 
-  db.query(sql, [endDate, startDate], (err, results) => {
+  db.query(sql, [endDate, endTime, startDate, startTime], (err, results) => {
     if (err) {
       console.error("GET /api/cars/available error:", err);
       return res.status(500).send(err.message);
@@ -98,7 +100,7 @@ module.exports = (db, upload) => {
   router.get("/caravailability/:plateNumber", (req, res) => {
     const plateNumber = req.params.plateNumber;
     const sql = `
-      SELECT start_date, end_date
+      SELECT start_date, start_time, end_date, end_time
         FROM reservations
        WHERE plate_number = ?
          AND status IN ('Pending','Approved')
@@ -112,7 +114,9 @@ module.exports = (db, upload) => {
 
       const bookedRanges = results.map(row => ({
         start: formatDate(row.start_date),
-        end:   formatDate(row.end_date)
+        startTime: String(row.start_time || "").slice(0, 5),
+        end: formatDate(row.end_date),
+        endTime: String(row.end_time || "").slice(0, 5),
       }));
 
       res.json(bookedRanges);
@@ -212,13 +216,13 @@ module.exports = (db, upload) => {
 
   // ------------------------------------------
   // 7) GET /api/cars/available-for-edit
-  //    GET ?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD&excludeReservationId=123
+  //    GET ?startDate=YYYY-MM-DD&startTime=HH:mm&endDate=YYYY-MM-DD&endTime=HH:mm&excludeReservationId=123
   // ------------------------------------------
   router.get("/available-for-edit", (req, res) => {
-    const { startDate, endDate, excludeReservationId } = req.query;
+    const { startDate, startTime, endDate, endTime, excludeReservationId } = req.query;
 
-    if (!startDate || !endDate) {
-      return res.status(400).json({ error: "Missing startDate or endDate" });
+    if (!startDate || !startTime || !endDate || !endTime) {
+      return res.status(400).json({ error: "Missing reservation date or time" });
     }
 
     const excludedId = Number(excludeReservationId || 0);
@@ -231,20 +235,24 @@ module.exports = (db, upload) => {
         FROM reservations
         WHERE id <> ?
           AND status IN ('Pending', 'Approved')
-          AND start_date <= ?
-          AND end_date >= ?
+          AND TIMESTAMP(start_date, start_time) < TIMESTAMP(?, ?)
+          AND TIMESTAMP(end_date, end_time) > TIMESTAMP(?, ?)
       )
       ORDER BY car_name
     `;
 
-    db.query(sql, [excludedId, endDate, startDate], (err, results) => {
+    db.query(
+      sql,
+      [excludedId, endDate, endTime, startDate, startTime],
+      (err, results) => {
       if (err) {
         console.error("GET /api/cars/available-for-edit error:", err);
         return res.status(500).json({ error: "Server error checking availability" });
       }
 
-      res.json(results);
-    });
+        res.json(results);
+      }
+    );
   });
 
   // ------------------------------------------
