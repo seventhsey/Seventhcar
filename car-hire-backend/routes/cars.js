@@ -1,6 +1,7 @@
 // routes/cars.js
 const express = require("express");
 const router = express.Router();
+const { activeReservationSql } = require("../services/pendingReservationExpiry");
 
 module.exports = (db, upload) => {
   // We can define this helper function here:
@@ -24,7 +25,7 @@ module.exports = (db, upload) => {
     SELECT * FROM cars 
     WHERE plate_number NOT IN (
       SELECT plate_number FROM reservations
-      WHERE status IN ('Pending', 'Approved')
+      WHERE ${activeReservationSql()}
         AND TIMESTAMP(start_date, start_time) < TIMESTAMP(?, ?)
         AND TIMESTAMP(end_date, end_time) > TIMESTAMP(?, ?)
     )
@@ -76,7 +77,7 @@ module.exports = (db, upload) => {
       FROM allDays
       CROSS JOIN totalCars
       LEFT JOIN reservations r
-             ON r.status IN ('Pending','Approved')
+             ON ${activeReservationSql("r")}
             AND r.start_date <= allDays.day
             AND r.end_date   >= allDays.day
       GROUP BY allDays.day, totalCars.total
@@ -103,7 +104,7 @@ module.exports = (db, upload) => {
       SELECT start_date, start_time, end_date, end_time
         FROM reservations
        WHERE plate_number = ?
-         AND status IN ('Pending','Approved')
+         AND ${activeReservationSql()}
     `;
 
     db.query(sql, [plateNumber], (err, results) => {
@@ -234,7 +235,7 @@ module.exports = (db, upload) => {
         SELECT plate_number
         FROM reservations
         WHERE id <> ?
-          AND status IN ('Pending', 'Approved')
+          AND ${activeReservationSql()}
           AND TIMESTAMP(start_date, start_time) < TIMESTAMP(?, ?)
           AND TIMESTAMP(end_date, end_time) > TIMESTAMP(?, ?)
       )

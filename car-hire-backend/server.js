@@ -327,6 +327,7 @@ const quotesRoutes = require("./routes/quotes");
 const validateReservationPricing = require("./middleware/validateReservationPricing");
 const sendReservationEmails = require("./middleware/sendReservationEmails");
 const { initializeSchema } = require("./services/schemaMigrations");
+const { startPendingExpirationJob } = require("./services/pendingReservationExpiry");
 
 app.use("/api/cars", (req, res, next) => {
   if (req.method === "GET") return next();
@@ -352,6 +353,7 @@ app.use("/api/extras", extrasRoutes(db));
 
 initializeSchema(db)
   .then(() => {
+    startPendingExpirationJob(db);
     app.listen(port, () => {
       console.log(`Server running on http://localhost:${port}`);
     });
