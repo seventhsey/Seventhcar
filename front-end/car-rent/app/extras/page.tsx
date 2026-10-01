@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { ChevronRight, Minus, Plus } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { getExtraMaxQuantity } from "../lib/extraLimits";
 
 const ignoreIds = [1, 2, 3, 9, 10, 11];
@@ -18,6 +19,7 @@ type Extra = {
 type StoredExtra = number | { id: number; qty?: number };
 
 const Extras = () => {
+  const router = useRouter();
   const [extras, setExtras] = useState<Extra[]>([]);
   const [quantities, setQuantities] = useState<{ [key: number]: number }>({});
 
@@ -75,7 +77,7 @@ const Extras = () => {
 
     reservation.extras = prevExtras;
     localStorage.setItem("pendingReservation", JSON.stringify(reservation));
-    window.location.href = "/contact";
+    router.push("/contact");
   };
 
   return (
