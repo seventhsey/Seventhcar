@@ -7,6 +7,12 @@ const fs = require('fs');
 const multer = require('multer');
 const cors = require('cors');
 const crypto = require('crypto');
+const {
+  loginLimiter,
+  quoteLimiter,
+  reservationCreateLimiter,
+  reservationLookupLimiter,
+} = require("./middleware/rateLimits");
 require('dotenv').config();
 
 const app = express();
@@ -212,7 +218,7 @@ app.get("/logout", (req, res) => {
   });
 });
 
-app.post('/login', (req, res) => {
+app.post('/login', loginLimiter, (req, res) => {
   const { username, password } = req.body;
 
   db.query('SELECT * FROM users WHERE username = ?', [username], (err, results) => {
@@ -335,7 +341,11 @@ app.use("/api/cars", (req, res, next) => {
 });
 app.use("/api/cars", carsRoutes(db, upload));
 
+app.post("/api/quotes", quoteLimiter);
 app.use("/api/quotes", quotesRoutes(db));
+
+app.post("/api/reservations/lookup", reservationLookupLimiter);
+app.post("/api/reservations", reservationCreateLimiter);
 
 app.use(
   "/api/reservations",
