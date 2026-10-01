@@ -1,6 +1,6 @@
 // pricecalc.js
 
-const carRateCache = new Map();
+let quoteRequestController = null;
 const conflictRequestCache = new Map();
 
 function calculateBookingDays(startDateStr, startTimeStr, endDateStr, endTimeStr) {
@@ -39,15 +39,16 @@ function registerPriceAutoCalc() {
 }
 
 async function autoCalculatePrice() {
+  if (quoteRequestController) quoteRequestController.abort();
+  const controller = new AbortController();
+  quoteRequestController = controller;
   const priceField = document.getElementById("editTotalPrice");
+  priceField.value = "";
   const plateNumber = document.getElementById("editPlateNumber").value.trim();
   const startDateStr = document.getElementById("editStartDate").value;
   const startTimeStr = document.getElementById("editStartTime").value;
   const endDateStr = document.getElementById("editEndDate").value;
   const endTimeStr = document.getElementById("editEndTime").value;
-
-  const reservationIdEl = document.getElementById("editReservationId");
-  const reservationId = reservationIdEl ? reservationIdEl.value : null;
 
   if (!plateNumber || !startDateStr || !startTimeStr || !endDateStr || !endTimeStr) return;
 
@@ -56,35 +57,37 @@ async function autoCalculatePrice() {
 
   if (endDT <= startDT) return;
 
-  if (await checkIfDatesConflict(plateNumber, startDT, endDT, reservationId)) {
-    alert("These dates/times overlap an existing booking for this car.");
-    return;
-  }
+  const extras = Array.from(document.querySelectorAll('.extra-checkbox:checked')).map(input => ({
+    extra_id: Number(input.value),
+    qty: 1,
+  }));
 
-  let dailyRate = carRateCache.get(plateNumber) || 0;
-
-  if (!carRateCache.has(plateNumber)) try {
-    const res = await fetch(`/api/cars/${encodeURIComponent(plateNumber)}`);
-    if (res.ok) {
-      const car = await res.json();
-      dailyRate = Number(car.price || 0);
-      carRateCache.set(plateNumber, dailyRate);
+  try {
+    const response = await fetch('/api/quotes', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      signal: controller.signal,
+      body: JSON.stringify({
+        plate_number: plateNumber,
+        start_date: startDateStr,
+        start_time: startTimeStr,
+        end_date: endDateStr,
+        end_time: endTimeStr,
+        extras,
+      }),
+    });
+    const result = await response.json();
+    if (!response.ok || !result.success || !Number.isFinite(Number(result.quote?.total))) {
+      throw new Error(result.error || 'Could not calculate the reservation price.');
     }
-  } catch (e) {
-    console.warn("Failed to fetch car rate:", e);
+    if (!controller.signal.aborted) {
+      priceField.value = Number(result.quote.total).toFixed(2);
+    }
+  } catch (error) {
+    if (controller.signal.aborted) return;
+    console.error('Admin price quote failed:', error);
+    window.uiNotify(error.message || 'Could not calculate the reservation price.', 'error');
   }
-
-  const dayCount = calculateBookingDays(startDateStr, startTimeStr, endDateStr, endTimeStr);
-  const multiplier = getTierMultiplier(dayCount);
-
-  let extrasTotal = 0;
-
-  document.querySelectorAll
-
-  const carPrice = dayCount * dailyRate * multiplier;
-  const finalPrice = carPrice + extrasTotal;
-
-  priceField.value = finalPrice.toFixed(2);
 }
 
 function parseLocalDateTime(dateStr, timeStr) {
