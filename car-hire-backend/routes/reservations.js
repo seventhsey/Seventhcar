@@ -2,10 +2,6 @@
 const express = require("express");
 const router = express.Router();
 const { sendConfirmedReservationEmail } = require("../services/confirmedReservationEmail");
-const {
-  activeReservationSql,
-  createPendingExpiry,
-} = require("../services/pendingReservationExpiry");
 
 module.exports = (db, { createReservationEditToken } = {}) => {
   function formatDate(dateObj) {
@@ -48,7 +44,7 @@ module.exports = (db, { createReservationEditToken } = {}) => {
           IFNULL(GROUP_CONCAT(DISTINCT r.plate_number), '') AS bookedCars
         FROM allDays
         LEFT JOIN reservations r
-          ON ${activeReservationSql("r")}
+          ON r.status IN ('Pending','Approved')
           AND r.start_date <= allDays.day
           AND r.end_date >= allDays.day
         GROUP BY allDays.day
@@ -320,13 +316,12 @@ module.exports = (db, { createReservationEditToken } = {}) => {
         `INSERT INTO reservations
          (customer_name, customer_email, customer_phone, flight_number, plate_number,
           start_date, start_time, end_date, end_time, pickup_location, dropoff_location,
-          total_price, status, expires_at, notes)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          total_price, status, notes)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           customer_name, customer_email, customer_phone, flight_number, plate_number,
           start_date, start_time, end_date, end_time, pickup_location || "",
-          dropoff_location || "", total_price, safeStatus,
-          createPendingExpiry(safeStatus), notes || ""
+          dropoff_location || "", total_price, safeStatus, notes || ""
         ]
       );
 
@@ -387,8 +382,8 @@ module.exports = (db, { createReservationEditToken } = {}) => {
         }
 
         db.query(
-          "UPDATE reservations SET status = ?, expires_at = ? WHERE id = ?",
-          [newStatus, createPendingExpiry(newStatus), reservationId],
+          "UPDATE reservations SET status = ? WHERE id = ?",
+          [newStatus, reservationId],
           async (updateErr) => {
             if (updateErr) {
               console.error("Status update error:", updateErr);
@@ -454,13 +449,12 @@ module.exports = (db, { createReservationEditToken } = {}) => {
         `UPDATE reservations SET
          customer_name=?, customer_email=?, customer_phone=?, flight_number=?, plate_number=?,
          start_date=?, start_time=?, end_date=?, end_time=?, pickup_location=?,
-         dropoff_location=?, total_price=?, status=?, expires_at=?, notes=?
+         dropoff_location=?, total_price=?, status=?, notes=?
          WHERE id=?`,
         [
           customer_name, customer_email, customer_phone, flight_number, plate_number,
           start_date, start_time, end_date, end_time, pickup_location || "",
-          dropoff_location || "", total_price, safeStatus,
-          createPendingExpiry(safeStatus), notes || "", reservationId
+          dropoff_location || "", total_price, safeStatus, notes || "", reservationId
         ]
       );
 

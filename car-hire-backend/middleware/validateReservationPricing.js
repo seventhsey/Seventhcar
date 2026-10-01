@@ -2,7 +2,6 @@ const {
   PricingError,
   calculateReservationQuote,
 } = require("../services/pricingService");
-const { activeReservationSql } = require("../services/pendingReservationExpiry");
 
 module.exports = function validateReservationPricing(db) {
   return async function reservationPricingGuard(req, res, next) {
@@ -60,7 +59,7 @@ module.exports = function validateReservationPricing(db) {
            FROM reservations
           WHERE plate_number = ?
             AND id <> ?
-            AND ${activeReservationSql()}
+            AND status IN ('Pending', 'Approved')
             AND TIMESTAMP(start_date, start_time) < TIMESTAMP(?, ?)
             AND TIMESTAMP(end_date, end_time) > TIMESTAMP(?, ?)
           LIMIT 1`,

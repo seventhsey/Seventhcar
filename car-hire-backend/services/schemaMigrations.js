@@ -19,23 +19,6 @@ async function ensureColumn(connection, tableName, columnName, definition) {
   console.log(`Database migration added ${tableName}.${columnName}`);
 }
 
-async function ensureIndex(connection, tableName, indexName, columns) {
-  const [rows] = await connection.query(
-    `SELECT COUNT(*) AS index_count
-       FROM information_schema.statistics
-      WHERE table_schema = DATABASE()
-        AND table_name = ?
-        AND index_name = ?`,
-    [tableName, indexName]
-  );
-  if (Number(rows[0]?.index_count || 0) > 0) return;
-
-  await connection.query(
-    `ALTER TABLE \`${tableName}\` ADD INDEX \`${indexName}\` (${columns})`
-  );
-  console.log(`Database migration added index ${tableName}.${indexName}`);
-}
-
 async function initializeSchema(pool) {
   const connection = await pool.promise().getConnection();
   const lockName = "seventhcar:schema-migrations";
@@ -62,18 +45,6 @@ async function initializeSchema(pool) {
       "reservations",
       "dropoff_location",
       "VARCHAR(255) NULL AFTER `pickup_location`"
-    );
-    await ensureColumn(
-      connection,
-      "reservations",
-      "expires_at",
-      "DATETIME NULL AFTER `status`"
-    );
-    await ensureIndex(
-      connection,
-      "reservations",
-      "idx_reservations_active_period",
-      "`plate_number`, `status`, `expires_at`, `start_date`, `end_date`"
     );
   } finally {
     if (hasLock) {
