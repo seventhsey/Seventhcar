@@ -38,15 +38,26 @@ module.exports = (db, { createReservationEditToken } = {}) => {
           SELECT DATE_ADD(day, INTERVAL 1 DAY)
           FROM allDays
           WHERE day < ?
+        ),
+        unavailableCars AS (
+          SELECT allDays.day, r.plate_number
+          FROM allDays
+          JOIN reservations r
+            ON r.status IN ('Pending','Approved')
+           AND r.start_date <= allDays.day
+           AND r.end_date >= allDays.day
+          UNION
+          SELECT allDays.day, cu.plate_number
+          FROM allDays
+          JOIN car_unavailability cu
+            ON cu.start_at < DATE_ADD(allDays.day, INTERVAL 1 DAY)
+           AND (cu.end_at IS NULL OR cu.end_at > allDays.day)
         )
         SELECT
           allDays.day AS date,
-          IFNULL(GROUP_CONCAT(DISTINCT r.plate_number), '') AS bookedCars
+          IFNULL(GROUP_CONCAT(DISTINCT unavailableCars.plate_number), '') AS bookedCars
         FROM allDays
-        LEFT JOIN reservations r
-          ON r.status IN ('Pending','Approved')
-          AND r.start_date <= allDays.day
-          AND r.end_date >= allDays.day
+        LEFT JOIN unavailableCars ON unavailableCars.day = allDays.day
         GROUP BY allDays.day
         ORDER BY allDays.day
       `;

@@ -27,6 +27,7 @@ document.addEventListener("DOMContentLoaded", function () {
   let searchTerm = "";
   let sortKey = "start_date";
   let sortDir = "desc";
+  let linkedReservationId = new URLSearchParams(window.location.search).get("open");
 
   const tableBody = document.getElementById("reservationsTable");
   const searchInput = document.getElementById("searchReservations");
@@ -168,6 +169,22 @@ document.addEventListener("DOMContentLoaded", function () {
       if (!res.ok) throw new Error("Could not load reservations.");
       ALL = await res.json();
       await renderTable();
+      if (linkedReservationId) {
+        const idToOpen = linkedReservationId;
+        linkedReservationId = null;
+        window.history.replaceState({}, "", window.location.pathname);
+
+        let attempts = 0;
+        const openWhenReady = () => {
+          attempts += 1;
+          if (window.openReservationModal && document.getElementById("reservationModal")) {
+            window.openReservationModal(idToOpen);
+          } else if (attempts < 20) {
+            window.setTimeout(openWhenReady, 100);
+          }
+        };
+        openWhenReady();
+      }
     } catch (e) {
       console.error("Error fetching reservations:", e);
       window.uiNotify(e.message || "Could not load reservations.", "error");

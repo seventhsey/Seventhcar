@@ -106,17 +106,31 @@ async function checkIfDatesConflict(plateNumber, startDT, endDT, selfId = null) 
     return conflictRequestCache.get(cacheKey);
   }
 
-  const request = fetch(`/api/reservations?${params.toString()}`)
-    .then(async res => {
-      if (!res.ok) throw new Error("Conflict check failed.");
-      const reservations = await res.json();
-      return reservations.some(reservation => {
+  const request = Promise.all([
+    fetch(`/api/reservations?${params.toString()}`),
+    fetch(`/api/car-unavailability?${params.toString()}`),
+  ])
+    .then(async ([reservationResponse, unavailableResponse]) => {
+      if (!reservationResponse.ok || !unavailableResponse.ok) {
+        throw new Error("Conflict check failed.");
+      }
+      const [reservations, unavailablePeriods] = await Promise.all([
+        reservationResponse.json(),
+        unavailableResponse.json(),
+      ]);
+      const reservationConflict = reservations.some(reservation => {
         if (selfId && String(reservation.id) === String(selfId)) return false;
         if (!["Pending", "Approved"].includes(reservation.status)) return false;
         const reservationStart = parseLocalDateTime(reservation.start_date, reservation.start_time);
         const reservationEnd = parseLocalDateTime(reservation.end_date, reservation.end_time);
         return startDT < reservationEnd && reservationStart < endDT;
       });
+      const unavailableConflict = unavailablePeriods.some(period => {
+        const unavailableStart = new Date(period.start_at);
+        const unavailableEnd = period.end_at ? new Date(period.end_at) : null;
+        return startDT < (unavailableEnd || new Date(8640000000000000)) && unavailableStart < endDT;
+      });
+      return reservationConflict || unavailableConflict;
     })
     .catch(e => {
       console.warn("Conflict check failed:", e);

@@ -330,6 +330,7 @@ const carsRoutes = require("./routes/cars");
 const reservationsRoutes = require("./routes/reservations");
 const extrasRoutes = require("./routes/extras");
 const quotesRoutes = require("./routes/quotes");
+const carUnavailabilityRoutes = require("./routes/carUnavailability");
 const validateReservationPricing = require("./middleware/validateReservationPricing");
 const sendReservationEmails = require("./middleware/sendReservationEmails");
 const { initializeSchema } = require("./services/schemaMigrations");
@@ -359,6 +360,8 @@ app.use("/api/extras", (req, res, next) => {
   return isAuthenticated(req, res, next);
 });
 app.use("/api/extras", extrasRoutes(db));
+
+app.use("/api/car-unavailability", isAuthenticated, carUnavailabilityRoutes(db));
 
 initializeSchema(db)
   .then(() => {

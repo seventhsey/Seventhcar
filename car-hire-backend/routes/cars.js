@@ -28,16 +28,25 @@ module.exports = (db, upload) => {
         AND TIMESTAMP(start_date, start_time) < TIMESTAMP(?, ?)
         AND TIMESTAMP(end_date, end_time) > TIMESTAMP(?, ?)
     )
+      AND plate_number NOT IN (
+        SELECT plate_number FROM car_unavailability
+        WHERE start_at < TIMESTAMP(?, ?)
+          AND (end_at IS NULL OR end_at > TIMESTAMP(?, ?))
+      )
     ORDER BY car_name
   `;
 
-  db.query(sql, [endDate, endTime, startDate, startTime], (err, results) => {
+  db.query(
+    sql,
+    [endDate, endTime, startDate, startTime, endDate, endTime, startDate, startTime],
+    (err, results) => {
     if (err) {
       console.error("GET /api/cars/available error:", err);
       return res.status(500).send(err.message);
     }
-    res.json(results);
-  });
+      res.json(results);
+    }
+  );
 });
 
   // ------------------------------------------
@@ -69,16 +78,27 @@ module.exports = (db, upload) => {
       ),
       totalCars AS (
          SELECT COUNT(*) AS total FROM cars
+      ),
+      unavailableCars AS (
+         SELECT allDays.day, r.plate_number
+         FROM allDays
+         JOIN reservations r
+           ON r.status IN ('Pending','Approved')
+          AND r.start_date <= allDays.day
+          AND r.end_date >= allDays.day
+         UNION
+         SELECT allDays.day, cu.plate_number
+         FROM allDays
+         JOIN car_unavailability cu
+           ON cu.start_at < DATE_ADD(allDays.day, INTERVAL 1 DAY)
+          AND (cu.end_at IS NULL OR cu.end_at > allDays.day)
       )
       SELECT 
          allDays.day AS date,
-         totalCars.total - COUNT(r.id) AS freeCars
+         totalCars.total - COUNT(DISTINCT unavailableCars.plate_number) AS freeCars
       FROM allDays
       CROSS JOIN totalCars
-      LEFT JOIN reservations r
-             ON r.status IN ('Pending','Approved')
-            AND r.start_date <= allDays.day
-            AND r.end_date   >= allDays.day
+      LEFT JOIN unavailableCars ON unavailableCars.day = allDays.day
       GROUP BY allDays.day, totalCars.total
       ORDER BY allDays.day
     `;
@@ -238,12 +258,20 @@ module.exports = (db, upload) => {
           AND TIMESTAMP(start_date, start_time) < TIMESTAMP(?, ?)
           AND TIMESTAMP(end_date, end_time) > TIMESTAMP(?, ?)
       )
+        AND plate_number NOT IN (
+          SELECT plate_number FROM car_unavailability
+          WHERE start_at < TIMESTAMP(?, ?)
+            AND (end_at IS NULL OR end_at > TIMESTAMP(?, ?))
+        )
       ORDER BY car_name
     `;
 
     db.query(
       sql,
-      [excludedId, endDate, endTime, startDate, startTime],
+      [
+        excludedId, endDate, endTime, startDate, startTime,
+        endDate, endTime, startDate, startTime,
+      ],
       (err, results) => {
       if (err) {
         console.error("GET /api/cars/available-for-edit error:", err);
@@ -315,6 +343,10 @@ module.exports = (db, upload) => {
         "DELETE FROM reservations WHERE plate_number = ?",
         [plateNumber]
       );
+      const [unavailabilityResult] = await connection.query(
+        "DELETE FROM car_unavailability WHERE plate_number = ?",
+        [plateNumber]
+      );
       const [carResult] = await connection.query(
         "DELETE FROM cars WHERE plate_number = ?",
         [plateNumber]
@@ -333,6 +365,7 @@ module.exports = (db, upload) => {
           cars: carResult.affectedRows,
           reservations: reservationsResult.affectedRows,
           reservation_extras: deletedExtras,
+          unavailability_periods: unavailabilityResult.affectedRows,
         },
       });
     } catch (error) {

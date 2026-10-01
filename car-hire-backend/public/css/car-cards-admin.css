@@ -58,3 +58,53 @@
 .car-card button:hover {
     background-color: #0056b3;
 }
+
+.car-unavailability {
+    border-top: 1px solid #e5e7eb;
+    padding-top: 12px;
+    text-align: left;
+}
+
+.unavailable-heading {
+    color: #b42318;
+    font-weight: 700;
+    text-transform: uppercase;
+    font-size: 0.8rem;
+}
+
+.unavailable-period {
+    background: #fff4ed;
+    border: 1px solid #fecdca;
+    border-radius: 6px;
+    padding: 10px;
+    margin-top: 8px;
+    font-size: 0.85rem;
+}
+
+.unavailable-reason {
+    font-weight: 600;
+    margin-top: 4px;
+}
+
+.affected-reservations {
+    margin-top: 8px;
+}
+
+.affected-reservations.warning {
+    color: #b42318;
+    font-weight: 700;
+}
+
+.affected-reservations a {
+    text-decoration: underline;
+}
+
+.car-card .make-available-btn { background-color: #198754 !important; }
+.car-card .mark-unavailable-btn { background-color: #b54708 !important; width: 100%; }
+.car-card .save-unavailability-btn { background-color: #b42318 !important; width: 100%; }
+
+.unavailability-form {
+    background: #f8f9fa;
+    border-radius: 6px;
+    padding: 10px;
+}

@@ -64,6 +64,17 @@ async function initializeSchema(pool) {
       "price_override_reason",
       "VARCHAR(255) NULL AFTER `price_override`"
     );
+    await connection.query(
+      `CREATE TABLE IF NOT EXISTS car_unavailability (
+        id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+        plate_number VARCHAR(255) NOT NULL,
+        start_at DATETIME NOT NULL,
+        end_at DATETIME NULL,
+        reason VARCHAR(255) NOT NULL,
+        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        INDEX idx_car_unavailability_period (plate_number, start_at, end_at)
+      )`
+    );
   } finally {
     if (hasLock) {
       try {

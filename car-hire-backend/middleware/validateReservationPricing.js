@@ -80,6 +80,29 @@ module.exports = function validateReservationPricing(db) {
         );
       }
 
+      const [unavailablePeriods] = await db.promise().query(
+        `SELECT id, reason
+           FROM car_unavailability
+          WHERE plate_number = ?
+            AND start_at < TIMESTAMP(?, ?)
+            AND (end_at IS NULL OR end_at > TIMESTAMP(?, ?))
+          LIMIT 1`,
+        [
+          payload.plate_number,
+          payload.end_date,
+          String(payload.end_time || "").slice(0, 5),
+          payload.start_date,
+          String(payload.start_time || "").slice(0, 5),
+        ]
+      );
+
+      if (unavailablePeriods.length) {
+        throw new PricingError(
+          "The selected vehicle is unavailable during this period. Please choose another vehicle.",
+          409
+        );
+      }
+
       // Never trust browser-calculated prices. Replace them with values built
       // from the database immediately before the reservation is stored.
       req.body.extras = result.normalizedExtras;
