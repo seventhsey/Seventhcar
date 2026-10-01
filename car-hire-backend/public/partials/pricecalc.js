@@ -112,6 +112,7 @@ async function checkIfDatesConflict(plateNumber, startDT, endDT, selfId = null) 
       const reservations = await res.json();
       return reservations.some(reservation => {
         if (selfId && String(reservation.id) === String(selfId)) return false;
+        if (!["Pending", "Approved"].includes(reservation.status)) return false;
         const reservationStart = parseLocalDateTime(reservation.start_date, reservation.start_time);
         const reservationEnd = parseLocalDateTime(reservation.end_date, reservation.end_time);
         return startDT < reservationEnd && reservationStart < endDT;
