@@ -1,123 +1,25 @@
-'use client'
-import { Mail, PhoneCall, Home, Clock } from "lucide-react";
+import { ArrowUpRight, Mail, Phone, MapPin } from "lucide-react";
 
 export default function ContactUs() {
   return (
-    <section id="contact" className="w-full bg-white py-12 md:py-24 scroll-mt-24">
-      <div className="max-w-6xl mx-auto px-4 md:px-0">
-        <h2 className="text-start md:text-center text-[30px] md:text-4xl font-bold text-gray-800 mb-[50px] pl-6 md:pl-0">
-          Contact us
-        </h2>
-
-        <div className="grid grid-cols-1 md:grid-cols-4 md:gap-6 pl-6 md:pl-8">
-          {/* Headquarters */}
-          <div className="flex flex-col items-start">
-            <div className="flex items-center mb-2 gap-4">
-              <div className="bg-gradient-to-l to-[#1cb4ec] from-[#1c78ec] rounded-full p-2 flex items-center justify-center">
-                <Home className="text-white h-6 w-6" />
-              </div>
-              <h3 className="font-bold text-lg">Headquarters</h3>
-            </div>
-            <div className="px-5">
-              <div className="relative w-full h-[100px] md:h-[150px]">
-                <div className="absolute left-0 top-0 bottom-0 w-0.5 h-full bg-blue-500 -translate-x-1/2"></div>
-                <div className="ml-9 pt-2 text-[13px]">
-                  <p className="text-gray-700 mb-1">Head Office</p>
-                  <p className="text-gray-700 mb-1">
-                    Unique building, 1st floor, Providence, 
-                  </p>
-                  <p className="text-gray-700">
-                    Mahe, Victoria, Seychelles
-                  </p>
-                </div>
-              </div>
-            </div>
+    <section id="contact" aria-labelledby="contact-heading" className="scroll-mt-24 bg-[#122b3a] py-16 text-white md:py-20">
+      <div className="mx-auto grid max-w-6xl gap-10 px-6 lg:grid-cols-[1.2fr_1fr] lg:gap-20">
+        <div>
+          <p className="mb-4 text-xs font-semibold uppercase tracking-[0.2em] text-[#8dd5cf]">Contact Seventh</p>
+          <h2 id="contact-heading" className="text-3xl font-semibold leading-tight tracking-tight md:text-4xl">Let’s plan your pickup.</h2>
+          <p className="mt-5 max-w-lg leading-relaxed text-slate-300">A question before you book, or a change to an existing reservation? Get in touch with our team. If you’ve already booked, include your reservation number.</p>
+          <div className="mt-8 flex flex-wrap gap-3">
+            <a href="tel:+2482502815" className="inline-flex items-center gap-3 rounded-lg bg-[#8dd5cf] px-5 py-3 font-semibold text-[#122b3a] transition hover:bg-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white"><Phone size={18} aria-hidden="true" />Call +248 2502815</a>
+            <a href="mailto:seventhseychelles@gmail.com" className="inline-flex items-center gap-3 rounded-lg border border-white/30 px-5 py-3 font-semibold transition hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white"><Mail size={18} aria-hidden="true" />Email us</a>
           </div>
-
-          {/* Email contacts */}
-          <div className="flex flex-col items-start">
-            <div className="flex items-center mb-2 gap-4">
-              <div className="bg-gradient-to-l to-[#1cb4ec] from-[#1c78ec] rounded-full p-2 flex items-center justify-center">
-                <Mail className="text-white h-6 w-6" />
-              </div>
-              <h3 className="font-bold text-lg">Email contacts</h3>
-            </div>
-            <div className="px-5">
-              <div className="relative w-full h-[100px] md:h-[150px]">
-                <div className="absolute left-0 top-0 bottom-0 w-0.5 h-full bg-blue-500 -translate-x-1/2"></div>
-                <div className="ml-9 pt-2 text-[13px]">
-                  <p className="text-gray-700 mb-1">
-                    Info & Reservations{" "}
-                    <a
-                      href="mailto:seventhseychelles@gmail.com"
-                      className="text-blue-500"
-                    >
-                      seventhseychelles@gmail.com
-                    </a>
-                  </p>
-                  <p className="text-gray-700">
-                    Support Center{" "}
-                    <a
-                      href="mailto:seventhseychelles@gmail.com"
-                      className="text-blue-500"
-                    >
-                      seventhseychelles@gmail.com
-                    </a>
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Phone contacts */}
-          <div className="flex flex-col items-start">
-            <div className="flex items-center mb-2 gap-4">
-              <div className="bg-gradient-to-l to-[#1cb4ec] from-[#1c78ec] rounded-full p-2 flex items-center justify-center">
-                <PhoneCall className="text-white h-6 w-6" />
-              </div>
-              <h3 className="font-bold text-lg">Phone contacts</h3>
-            </div>
-            <div className="px-5">
-              <div className="relative w-full h-[100px] md:h-[150px]">
-                <div className="absolute left-0 top-0 bottom-0 w-0.5 h-full bg-blue-500 -translate-x-1/2"></div>
-                <div className="ml-9 pt-2 text-[13px]">
-                  <p className="text-gray-700">
-                    Info & Reservations{" "}
-                  </p>
-                  <p className="mb-1">
-                    <a className="text-blue-500" href="tel:+2482502815">+248 2502815</a>
-                  </p>
-                  <p className="text-gray-700">
-                    Support Center{" "}
-                    <a className="text-blue-500" href="tel:+2482502815">+248 2502815</a>
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Working hours */}
-          <div className="flex flex-col items-start">
-            <div className="flex items-center mb-2 gap-4">
-              <div className="bg-gradient-to-l to-[#1cb4ec] from-[#1c78ec] rounded-full p-2 flex items-center justify-center">
-                <Clock className="text-white h-6 w-6" />
-              </div>
-              <h3 className="font-bold text-lg">Working hours</h3>
-            </div>
-            <div className="px-5">
-              <div className="relative w-full h-[100px] md:h-[150px]">
-                <div className="absolute left-0 top-0 bottom-0 w-0.5 h-full bg-[#1c7fec] -translate-x-1/2"></div>
-                <div className="ml-9 pt-2 text-[13px]">
-                  <p className="text-gray-700 mb-1">
-                    Working hours <span className="text-[#1c7fec]">24 / 7</span>
-                  </p>
-                  <p className="text-gray-700">Season <span className="text-[#1c7fec]">All year</span></p>
-                </div>
-              </div>
-            </div>
-          </div>
+          <a href="mailto:seventhseychelles@gmail.com" className="mt-4 inline-block break-all text-sm text-slate-300 underline underline-offset-4 hover:text-white">seventhseychelles@gmail.com</a>
         </div>
-
+        <div className="border-t border-white/20 pt-8 lg:border-l lg:border-t-0 lg:pl-10 lg:pt-0">
+          <div className="flex items-center gap-3"><MapPin size={21} className="text-[#8dd5cf]" aria-hidden="true" /><h3 className="text-lg font-semibold">Our Mahé office</h3></div>
+          <address className="mt-4 text-sm not-italic leading-7 text-slate-300">Unique Building, 1st floor<br />Providence, Mahé<br />Seychelles</address>
+          <a href="https://maps.app.goo.gl/BenGYBpuRSKBxe7W9" target="_blank" rel="noopener noreferrer" className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-[#8dd5cf] underline underline-offset-4 hover:text-white">Open directions<ArrowUpRight size={17} aria-hidden="true" /></a>
+          <div className="mt-7 border-t border-white/20 pt-5 text-sm"><p className="font-semibold">Rental support · 24/7</p><p className="mt-2 text-slate-300">Available throughout the year.</p></div>
+        </div>
       </div>
     </section>
   );

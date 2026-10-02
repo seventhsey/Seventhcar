@@ -1,89 +1,31 @@
-'use client'
-import React from 'react';
-import { ChevronRight } from 'lucide-react';
-import Image from 'next/image';
-import Link from 'next/link';
-import { Swiper, SwiperSlide } from 'swiper/react';
-import { Pagination } from 'swiper/modules';
-import 'swiper/css';
-import 'swiper/css/pagination';
+import Link from "next/link";
+import { ArrowRight, Compass, LifeBuoy, ClipboardCheck } from "lucide-react";
 
-import img1 from '@/public/Assets/ico_key.svg';
-import img2 from '@/public/Assets/ico_time-clock.svg';
-import img3 from '@/public/Assets/ico_return-car.svg';
+const resources = [
+  { icon: Compass, title: "Planning your trip", text: "Documents, protection and the details to check before booking.", href: "/faq", link: "Read the rental FAQs" },
+  { icon: ClipboardCheck, title: "Already booked?", text: "Look up your reservation to review or request changes to your plans.", href: "/manage-reservation", link: "Manage your reservation" },
+  { icon: LifeBuoy, title: "Need a hand?", text: "Speak to our team about pickup, your rental or returning the car.", href: "#contact", link: "Contact Seventh" },
+];
 
-interface SupportCard {
-  title: string;
-  img: string;
-}
-
-export const SupportCenter: React.FC = () => {
-  const supportCards: SupportCard[] = [
-    {
-      title: 'Before Rental',
-      img: img1,
-    },
-    {
-      title: 'During Rental',
-      img: img2,
-    },
-    {
-      title: 'After Rental',
-      img: img3,
-    },
-  ];
-
+export function SupportCenter() {
   return (
-    <div className="w-full max-w-6xl mx-auto px-4 py-12">
-      <div className="flex items-center justify-between mb-4 md:mb-8">
-        <h1 className="text-[30px] md:text-[36px] pl-2 md:pl-20 font-bold text-gray-900">Support Center</h1>
-        <Link href="/faq" className="flex items-center text-xs md:text-sm font-bold text-black hover:text-[#1c7fec]">
-          View FAQ <ChevronRight className="ml-1 w-4 h-4 text-[#1c7fec]" />
-        </Link>
+    <section aria-labelledby="help-heading" className="mx-auto max-w-6xl px-6 py-16 md:py-20">
+      <div className="mb-9 max-w-xl">
+        <p className="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-[#167a7c]">Useful before you go</p>
+        <h2 id="help-heading" className="text-3xl font-semibold tracking-tight text-[#122b3a] md:text-4xl">A little help along the way.</h2>
       </div>
-
-      <div className="hidden md:flex gap-6">
-        {supportCards.map((card, index) => (
-          <Link
-            href="/faq"
-            key={index}
-            className="rounded-[16px] p-[13px_20px] flex flex-col items-start justify-between bg-gradient-to-r from-[#f8f8f8] to-[#f8f8f8] hover:from-[#1cb4ec] hover:to-[#1c7fec] hover:text-white transition-shadow h-[155px] w-[210px] relative overflow-hidden"
-          >
-            <Image src={card.img} alt={card.title} className="w-[50px] h-[50px]" />
-            <span className="text-base font-bold">{card.title}</span>
-            <div className="absolute p-1.5 bg-white text-gray-400 rounded-full -right-2 top-[60px]">
-              <ChevronRight size={24} />
-            </div>
+      <div className="grid gap-5 md:grid-cols-3">
+        {resources.map(({ icon: Icon, title, text, href, link }) => (
+          <Link href={href} key={title} className="group flex flex-col rounded-2xl border border-slate-200 p-6 transition hover:border-[#167a7c] hover:bg-[#f2f7f8] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#167a7c]">
+            <Icon className="mb-6 h-7 w-7 text-[#167a7c]" aria-hidden="true" />
+            <h3 className="text-lg font-semibold text-[#122b3a]">{title}</h3>
+            <p className="mb-7 mt-3 text-sm leading-relaxed text-slate-600">{text}</p>
+            <span className="mt-auto flex items-center justify-between gap-3 text-sm font-semibold text-[#122b3a]">{link}<ArrowRight size={18} className="shrink-0 transition-transform group-hover:translate-x-1" aria-hidden="true" /></span>
           </Link>
         ))}
       </div>
-
-      <div className="md:hidden">
-        <Swiper
-          modules={[Pagination]}
-          spaceBetween={16}
-          slidesPerView={2}
-          pagination={{ clickable: true }}
-          className="mySwiper"
-        >
-          {supportCards.map((card, index) => (
-            <SwiperSlide key={index}>
-              <Link
-                href="/faq"
-                className="rounded-[16px] p-[13px_20px] flex flex-col items-start justify-between bg-gradient-to-r from-[#f8f8f8] to-[#f8f8f8] hover:from-[#1cb4ec] hover:to-[#1c7fec] hover:text-white transition-shadow h-[155px] max-w-[210px] relative overflow-hidden"
-              >
-                <Image src={card.img} alt={card.title} className="w-[50px] h-[50px]" />
-                <span className="text-base font-bold">{card.title}</span>
-                <div className="absolute p-1.5 bg-white text-gray-400 rounded-full -right-2 top-[60px]">
-                  <ChevronRight size={24} />
-                </div>
-              </Link>
-            </SwiperSlide>
-          ))}
-        </Swiper>
-      </div>
-    </div>
+    </section>
   );
-};
+}
 
 export default SupportCenter;
