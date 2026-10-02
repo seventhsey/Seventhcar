@@ -33,11 +33,14 @@ const configuredFrontendOrigin = String(process.env.FRONTEND_URL || "")
   .trim()
   .replace(/\/$/, "");
 
-function isAllowedOrigin(origin) {
+function isAllowedOrigin(origin, req) {
   // Requests made server-to-server, curl, health checks, etc. do not send Origin.
   if (!origin) return true;
 
   const normalized = origin.replace(/\/$/, "");
+
+  // Admin pages share this backend origin; trust proxy reflects Railway HTTPS.
+  if (normalized === `${req.protocol}://${req.get("host")}`) return true;
 
   if (configuredFrontendOrigin && normalized === configuredFrontendOrigin) {
     return true;
@@ -50,17 +53,16 @@ function isAllowedOrigin(origin) {
   return false;
 }
 
-app.use(cors({
-  origin(origin, callback) {
-    if (isAllowedOrigin(origin)) {
-      callback(null, true);
-      return;
-    }
+app.use(cors((req, callback) => {
+  const origin = req.get("origin");
+  if (isAllowedOrigin(origin, req)) {
+    return callback(null, { origin: true, credentials: true });
+  }
 
-    console.warn(`Blocked CORS origin: ${origin}`);
-    callback(new Error("Origin not allowed by CORS"));
-  },
-  credentials: true,
+  console.warn(`Blocked CORS origin: ${origin}`);
+  const error = new Error("Origin not allowed by CORS");
+  error.status = 403;
+  return callback(error);
 }));
 
 const db = mysql.createPool({
@@ -362,6 +364,16 @@ app.use("/api/extras", (req, res, next) => {
 app.use("/api/extras", extrasRoutes(db));
 
 app.use("/api/car-unavailability", isAuthenticated, carUnavailabilityRoutes(db));
+
+app.use((error, req, res, next) => {
+  if (res.headersSent) return next(error);
+  console.error("Request failed:", error);
+  const status = error.status === 403 ? 403 : 500;
+  res.status(status).json({
+    success: false,
+    message: status === 403 ? "Origin not allowed." : "Server error. Please try again.",
+  });
+});
 
 initializeSchema(db)
   .then(() => {

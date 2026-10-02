@@ -1,26 +1,29 @@
-console.log("login script loaded ")
-document.getElementById('login-form').addEventListener('submit', function(event) {
+document.getElementById('login-form').addEventListener('submit', async function(event) {
     event.preventDefault();
     const username = document.getElementById('username').value;
     const password = document.getElementById('password').value;
+    const errorMessage = document.getElementById('error-message');
+    errorMessage.style.display = 'none';
 
-    fetch('/login', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ username, password })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
+    try {
+        const response = await fetch('/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password })
+        });
+        const isJson = response.headers.get('content-type')?.includes('application/json');
+        const data = isJson ? await response.json() : null;
+
+        if (response.ok && data?.success) {
             sessionStorage.setItem('loggedIn', 'true');
             window.location.href = '/cars';
-        } else {
-            document.getElementById('error-message').style.display = 'block';
+            return;
         }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-    });
+
+        errorMessage.textContent = data?.message || 'Login failed. Please try again shortly.';
+        errorMessage.style.display = 'block';
+    } catch (error) {
+        errorMessage.textContent = 'Unable to reach the server. Please try again.';
+        errorMessage.style.display = 'block';
+    }
 });
