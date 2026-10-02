@@ -1,50 +1,21 @@
-import React from 'react';
-import img1 from '@/public/Assets/percent.svg'
-import img2 from '@/public/Assets/support.svg'
-import img3 from '@/public/Assets/earphone.svg'
-import img4 from '@/public/Assets/cancel.svg'
-import Image from 'next/image';
+import { ReceiptText, Headset, CalendarDays, MapPin } from "lucide-react";
 
 const features = [
-  {
-    img: img1,
-    title: 'Transparent Pricing',
-    description: 'See your total before submitting',
-  },
-  {
-    img: img2,
-    title: '24/7 Support',
-    description: 'We’re always here to help',
-  },
-  {
-    img: img3,
-    title: 'Flexible Booking',
-    description: 'Book your car on your schedule',
-  },
-  {
-    img: img4,
-    title: 'Flexible Locations',
-    description: 'Airport, jetty, and custom pickup',
-  },
+  { icon: ReceiptText, title: "Transparent Pricing", description: "See your total before submitting" },
+  { icon: Headset, title: "24/7 Support", description: "We’re always here to help" },
+  { icon: CalendarDays, title: "Flexible Booking", description: "Book your car on your schedule" },
+  { icon: MapPin, title: "Flexible Locations", description: "Airport, jetty, and custom pickup" },
 ];
 
-const Exta = () => {
+export default function Exta() {
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 px-4 py-10 md:py-6 md:px-6">
-      {features.map((item, index) => (
-        <div
-          key={index}
-          className="flex items-start md:items-center md:p-4 transition"
-        >
-          <div className="mr-4"><Image src={item.img} alt={item.title} /></div>
-          <div className="flex-1">
-            <h2 className="text-base font-bold">{item.title}</h2>
-            <p className="text-[13px]">{item.description}</p>
-          </div>
+    <div className="mx-auto grid max-w-6xl grid-cols-2 gap-6 px-6 py-10 lg:grid-cols-4">
+      {features.map(({ icon: Icon, title, description }) => (
+        <div key={title} className="flex items-start gap-3">
+          <Icon className="mt-1 h-6 w-6 shrink-0 text-[#167a7c]" aria-hidden="true" />
+          <div><h2 className="text-sm font-semibold text-[#122b3a]">{title}</h2><p className="mt-1 text-xs leading-relaxed text-slate-600">{description}</p></div>
         </div>
       ))}
     </div>
   );
-};
-
-export default Exta;
+}

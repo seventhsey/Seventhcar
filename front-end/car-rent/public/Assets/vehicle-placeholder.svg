@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="360" viewBox="0 0 640 360">
+<rect width="640" height="360" rx="24" fill="#f2f7f8"/>
+<g fill="none" stroke="#167a7c" stroke-width="6" stroke-linecap="round" stroke-linejoin="round">
+<path d="M200 209v-40l25-46h190l25 46v40M200 169h240M222 209h196M226 123l-12 46M414 123l12 46"/>
+<path d="M200 209v15h31v-15M409 209v15h31v-15M216 187h26M398 187h26"/>
+</g><text x="320" y="283" text-anchor="middle" fill="#526675" font-family="Arial,sans-serif" font-size="20">Vehicle photo coming soon</text>
+</svg>
