@@ -2,11 +2,8 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import { ChevronRight, RefreshCw } from "lucide-react";
+import { ChevronRight, RefreshCw, Fuel, DoorOpen, Briefcase } from "lucide-react";
 import { useRouter } from "next/navigation";
-import fuelIcon from "@/public/Assets/ico_fuel.svg";
-import doorIcon from "@/public/Assets/ico_doors.svg";
-import bagIcon from "@/public/Assets/ico_bags.svg";
 
 type Car = {
   model: string;
@@ -134,7 +131,7 @@ export default function Vehicles() {
             model: String(car.car_name || "Vehicle"),
             image: car.car_image_url
               ? `${apiBaseUrl}/uploads/${car.car_image_url}`
-              : "/Assets/hero-cars.png",
+              : "/Assets/vehicle-placeholder.svg",
             fuel: String(car.fuel_type || "—"),
             doors: car.door_count ?? "—",
             storage: String(car.storage_space || ""),
@@ -228,16 +225,16 @@ export default function Vehicles() {
 
                 <div className="flex justify-around text-sm text-black py-2 z-10 relative mt-auto">
                   <div className="flex flex-col items-center">
-                    <Image src={fuelIcon} alt="fuel icon" />
+                    <Fuel className="mb-1 h-6 w-6" aria-hidden="true" />
                     <span>{car.fuel}</span>
                   </div>
                   <div className="flex flex-col items-center">
-                    <Image src={doorIcon} alt="car door icon" />
+                    <DoorOpen className="mb-1 h-6 w-6" aria-hidden="true" />
                     <span>{car.doors} Doors</span>
                   </div>
                   {car.storage && (
                     <div className="flex flex-col items-center">
-                      <Image src={bagIcon} alt="luggage capacity icon" />
+                      <Briefcase className="mb-1 h-6 w-6" aria-hidden="true" />
                       <span>{car.storage}</span>
                     </div>
                   )}

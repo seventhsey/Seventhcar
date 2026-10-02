@@ -1,12 +1,8 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { ChevronDown } from "lucide-react"
+import { ChevronDown, MapPin, CalendarDays, PencilLine } from "lucide-react"
 import Image from "next/image"
-import locationIcon from "@/public/Assets/ico_location.svg"
-import calendarIcon1 from "@/public/Assets/ico_date1.svg"
-import calendarIcon2 from "@/public/Assets/ico_date2.svg"
-import editIcon from "@/public/Assets/ico_edit.svg"
 import { useRouter } from "next/navigation"
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
@@ -80,16 +76,17 @@ const ReservationForm = () => {
 
   return (
     <div
-      className="w-full max-w-full overflow-x-hidden bg-cover bg-center flex flex-col items-center justify-center transition-all duration-500 px-4 md:px-0 py-24 md:py-28"
-      style={{ backgroundImage: "url(/Assets/Mo-vew.jpg)" }}
+      className="relative isolate w-full max-w-full overflow-x-hidden bg-[#122b3a] flex flex-col items-center justify-center transition-all duration-500 px-4 md:px-0 py-24 md:py-28"
     >
+      <Image src="/Assets/seventh-coastal-drive.webp" alt="" fill preload sizes="100vw" className="-z-20 object-cover object-center" />
+      <div aria-hidden="true" className="absolute inset-0 -z-10 bg-[#122b3a]/35" />
       <div className="max-w-4xl mx-auto text-center">
-        <h3 className="text-[34px] leading-tight md:text-[50px] text-white font-bold md:mt-20 mb-24 md:mb-0 max-w-full break-words">
+        <h1 className="text-[34px] leading-tight md:text-[50px] text-white font-semibold md:mt-12 mb-8 max-w-full break-words">
           Rent A Car in Seychelles
-        </h3>
+        </h1>
       </div>
       <div
-        className="w-full max-w-[calc(100vw-2rem)] md:max-w-7xl mx-auto bg-white py-4 md:py-8 md:px-10 px-6 rounded-t-xl rounded-br-xl md:rounded-br-none backdrop-blur-md bg-opacity-90 flex flex-col"
+        className="w-full max-w-[calc(100vw-2rem)] md:max-w-7xl mx-auto bg-white py-4 md:py-8 md:px-10 px-6 rounded-2xl shadow-xl flex flex-col"
       >
         {/* Island Selection */}
         <div className="mb-6">
@@ -100,7 +97,7 @@ const ReservationForm = () => {
               <select
                 value={island}
                 onChange={(e) => setIsland(e.target.value)}
-                className="w-full h-[65px] p-3 px-6 border border-[#1c7fec] rounded-md focus:outline-none appearance-none bg-[#f8f8f8]"
+                className="w-full h-[65px] p-3 px-6 border border-[#167a7c] rounded-md focus:outline-none appearance-none bg-[#f8f8f8]"
               >
                 <option value="" disabled>Select location...</option>
                 <option value="Mahe Airport">Mahe Airport</option>
@@ -109,11 +106,11 @@ const ReservationForm = () => {
               </select>
               <div className="absolute inset-y-0 -left-4 flex items-center pointer-events-none">
                 <div className="w-9 h-9 rounded-full bg-white flex items-center justify-center">
-                  <Image src={locationIcon} alt="location icon" />
+                  <MapPin className="h-5 w-5 text-[#167a7c]" aria-hidden="true" />
                 </div>
               </div>
               <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none">
-                <ChevronDown className="h-4 w-4 text-[#1c7fec]" />
+                <ChevronDown className="h-4 w-4 text-[#167a7c]" />
               </div>
             </div>
             {/* Drop-off location */}
@@ -121,7 +118,7 @@ const ReservationForm = () => {
               <select
                 value={dropOff}
                 onChange={(e) => setDropOff(e.target.value)}
-                className="w-full h-[65px] p-3 px-6 border border-[#1c7fec] rounded-md focus:outline-none appearance-none bg-[#f8f8f8]"
+                className="w-full h-[65px] p-3 px-6 border border-[#167a7c] rounded-md focus:outline-none appearance-none bg-[#f8f8f8]"
               >
                 <option value="" disabled>Select location...</option>
                 <option value="Mahe Airport">Mahe Airport</option>
@@ -130,11 +127,11 @@ const ReservationForm = () => {
               </select>
               <div className="absolute inset-y-0 -left-4 flex items-center pointer-events-none">
                 <div className="w-9 h-9 rounded-full bg-white flex items-center justify-center">
-                  <Image src={locationIcon} alt="location icon" />
+                  <MapPin className="h-5 w-5 text-[#167a7c]" aria-hidden="true" />
                 </div>
               </div>
               <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none">
-                <ChevronDown className="h-4 w-4 text-[#1c7fec]" />
+                <ChevronDown className="h-4 w-4 text-[#167a7c]" />
               </div>
             </div>
           </div>
@@ -166,7 +163,7 @@ const ReservationForm = () => {
                 />
                 <div className="absolute inset-y-0 -left-4 flex items-center pointer-events-none">
                   <div className="w-9 h-9 rounded-full bg-white flex items-center justify-center">
-                    <Image src={calendarIcon1} alt="calendar icon" />
+                    <CalendarDays className="h-5 w-5 text-[#167a7c]" aria-hidden="true" />
                   </div>
                 </div>
               </div>
@@ -211,7 +208,7 @@ const ReservationForm = () => {
                 />
                 <div className="absolute inset-y-0 -left-4 flex items-center pointer-events-none">
                   <div className="w-9 h-9 rounded-full bg-white flex items-center justify-center">
-                    <Image src={calendarIcon2} alt="calendar icon" />
+                    <CalendarDays className="h-5 w-5 text-[#167a7c]" aria-hidden="true" />
                   </div>
                 </div>
               </div>
@@ -237,7 +234,7 @@ const ReservationForm = () => {
           <div>
             <button
               onClick={handleSubmit}
-              className="w-full px-16 h-[65px] bg-gradient-to-r hover:from-[#17a932] hover:to-[#1cea88] from-[#1cea88] to-[#17a932] text-white font-bold rounded-lg transition"
+              className="w-full px-16 h-[65px] bg-[#167a7c] hover:bg-[#126467] text-white font-bold rounded-lg transition"
             >
               START
             </button>
@@ -248,7 +245,7 @@ const ReservationForm = () => {
           onClick={() => router.push("/manage-reservation")}
           className="bg-white rounded-b-2xl flex items-center gap-2 cursor-pointer md:hidden text-[13px]"
         >
-          <Image src={editIcon} alt="edit icon" />
+          <PencilLine className="h-5 w-5 text-[#167a7c]" aria-hidden="true" />
           <span>Edit reservation</span>
         </div>
       </div>
@@ -260,7 +257,7 @@ const ReservationForm = () => {
             onClick={() => router.push("/manage-reservation")}
             className="bg-white px-4 py-2 rounded-b-2xl md:flex items-center gap-2 cursor-pointer hidden"
           >
-            <Image src={editIcon} alt="edit icon" />
+            <PencilLine className="h-5 w-5 text-[#167a7c]" aria-hidden="true" />
             <span>Edit reservation</span>
           </div>
         </div>

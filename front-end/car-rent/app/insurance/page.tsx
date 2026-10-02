@@ -2,8 +2,6 @@
 
 import React, { useEffect, useState } from "react";
 import { Check, Info, X } from "lucide-react";
-import Image from "next/image";
-import infoIcon from "@/public/Assets/ico_tooltip.svg";
 import { useRouter } from "next/navigation";
 
 
@@ -258,7 +256,7 @@ reservation.extras = [...withoutOldInsurance, protectionId];
                 return (
                   <tr key={index} className={rowClass}>
                     <td className="p-3 flex items-center gap-3">
-                      <Image src={infoIcon} alt="info icon" />
+                      <Info className="h-5 w-5 shrink-0 text-[#167a7c]" aria-hidden="true" />
                       {item.title}
                     </td>
                     {plans.map((planKey) => {
