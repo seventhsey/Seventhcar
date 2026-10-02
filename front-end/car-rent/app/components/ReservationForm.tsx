@@ -255,7 +255,7 @@ const ReservationForm = () => {
         <div className="flex justify-between items-center w-full">
           <div
             onClick={() => router.push("/manage-reservation")}
-            className="bg-white px-4 py-2 rounded-b-2xl md:flex items-center gap-2 cursor-pointer hidden"
+            className="bg-white md:ml-6 px-4 py-2 rounded-b-2xl md:flex items-center gap-2 cursor-pointer hidden"
           >
             <PencilLine className="h-5 w-5 text-[#167a7c]" aria-hidden="true" />
             <span>Edit reservation</span>
