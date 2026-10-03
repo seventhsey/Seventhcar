@@ -2,6 +2,7 @@
 const express = require("express");
 const router = express.Router();
 const { sendConfirmedReservationEmail } = require("../services/confirmedReservationEmail");
+const { sendCancelledReservationEmail } = require("../services/cancelledReservationEmail");
 
 module.exports = (db, { createReservationEditToken } = {}) => {
   function formatDate(dateObj) {
@@ -318,6 +319,9 @@ module.exports = (db, { createReservationEditToken } = {}) => {
     const allowedStatuses = new Set(["Pending", "Approved", "Completed", "Cancelled"]);
     const safeStatus =
       req.session.userId && allowedStatuses.has(status) ? status : "Pending";
+    if (safeStatus === "Cancelled") {
+      return res.status(400).json({ error: "Create the reservation as Pending, then use Reject/Cancel to notify the customer." });
+    }
     let connection;
 
     try {
@@ -369,69 +373,62 @@ module.exports = (db, { createReservationEditToken } = {}) => {
   });
 
   // Dedicated status change endpoint. This never recalculates pricing or touches extras.
-  router.patch("/:id/status", (req, res) => {
+  router.patch("/:id/status", async (req, res) => {
     const reservationId = Number(req.params.id);
     const newStatus = String(req.body.status || "").trim();
+    const reason = typeof req.body.cancellation_reason === "string" ? req.body.cancellation_reason.trim() : "";
+    const resend = req.body.resendEmail === true && newStatus === "Cancelled";
     const allowedStatuses = new Set(["Pending", "Approved", "Completed", "Cancelled"]);
-
-    if (!reservationId || !allowedStatuses.has(newStatus)) {
+    if (!Number.isSafeInteger(reservationId) || reservationId < 1 || !allowedStatuses.has(newStatus)) {
       return res.status(400).json({ success: false, error: "Invalid reservation status." });
     }
-
-    db.query(
-      "SELECT status FROM reservations WHERE id = ?",
-      [reservationId],
-      (lookupErr, rows) => {
-        if (lookupErr) {
-          console.error("Status lookup error:", lookupErr);
-          return res.status(500).json({ success: false, error: "Could not update reservation status." });
-        }
-        if (!rows.length) {
-          return res.status(404).json({ success: false, error: "Reservation not found." });
-        }
-
-        const previousStatus = rows[0].status;
-        if (previousStatus === newStatus) {
-          return res.json({ success: true, reservationId, status: newStatus, emailSent: false, unchanged: true });
-        }
-
-        db.query(
-          "UPDATE reservations SET status = ? WHERE id = ?",
-          [newStatus, reservationId],
-          async (updateErr) => {
-            if (updateErr) {
-              console.error("Status update error:", updateErr);
-              return res.status(500).json({ success: false, error: "Could not update reservation status." });
-            }
-
-            let emailSent = false;
-            let emailConfigured = true;
-            let emailError = "";
-
-            if (newStatus === "Approved" && previousStatus !== "Approved") {
-              try {
-                const result = await sendConfirmedReservationEmail(db, reservationId);
-                emailConfigured = result.configured;
-                emailSent = result.sent;
-              } catch (error) {
-                emailError = error instanceof Error ? error.message : String(error);
-                console.error(`Reservation #${reservationId} approval email failed:`, error);
-              }
-            }
-
-            res.json({
-              success: true,
-              reservationId,
-              previousStatus,
-              status: newStatus,
-              emailConfigured,
-              emailSent,
-              emailError,
-            });
-          }
-        );
+    if (newStatus === "Cancelled" && (!reason || reason.length > 2000)) {
+      return res.status(400).json({ success: false, error: "Enter a cancellation reason for the customer (maximum 2000 characters)." });
+    }
+    let connection;
+    let previousStatus;
+    try {
+      connection = await db.promise().getConnection();
+      await connection.beginTransaction();
+      const [rows] = await connection.query("SELECT status FROM reservations WHERE id = ? FOR UPDATE", [reservationId]);
+      if (!rows.length) {
+        await connection.rollback();
+        return res.status(404).json({ success: false, error: "Reservation not found." });
       }
-    );
+      previousStatus = rows[0].status;
+      if (previousStatus === newStatus && !resend) {
+        await connection.commit();
+        return res.json({ success: true, reservationId, status: newStatus, emailSent: false, unchanged: true });
+      }
+      if (newStatus === "Cancelled") {
+        await connection.query("UPDATE reservations SET status = ?, cancellation_reason = ? WHERE id = ?", [newStatus, reason, reservationId]);
+      } else {
+        await connection.query("UPDATE reservations SET status = ?, cancellation_reason = NULL WHERE id = ?", [newStatus, reservationId]);
+      }
+      await connection.commit();
+    } catch (error) {
+      if (connection) await connection.rollback().catch(() => {});
+      console.error("Status update failed:", error);
+      return res.status(500).json({ success: false, error: "Could not update reservation status." });
+    } finally {
+      if (connection) connection.release();
+    }
+    let emailSent = false;
+    let emailConfigured = true;
+    let emailError = "";
+    if (newStatus === "Approved" || newStatus === "Cancelled") {
+      try {
+        const result = newStatus === "Cancelled"
+          ? await sendCancelledReservationEmail(db, reservationId)
+          : await sendConfirmedReservationEmail(db, reservationId);
+        emailConfigured = result.configured;
+        emailSent = result.sent;
+      } catch (error) {
+        emailError = "The reservation was saved, but the email could not be sent. Check backend logs and retry.";
+        console.error(`Reservation #${reservationId} ${newStatus} email failed:`, error);
+      }
+    }
+    return res.json({ success: true, reservationId, previousStatus, status: newStatus, emailConfigured, emailSent, emailError });
   });
 
   router.put("/:id", async (req, res) => {
@@ -452,12 +449,17 @@ module.exports = (db, { createReservationEditToken } = {}) => {
       await connection.beginTransaction();
 
       const [existingRows] = await connection.query(
-        "SELECT id FROM reservations WHERE id = ? FOR UPDATE",
+        "SELECT id, status FROM reservations WHERE id = ? FOR UPDATE",
         [reservationId]
       );
       if (!existingRows.length) {
         await connection.rollback();
         return res.status(404).json({ error: "Reservation not found." });
+      }
+
+      if (safeStatus === "Cancelled" && existingRows[0].status !== "Cancelled") {
+        await connection.rollback();
+        return res.status(400).json({ error: "Use Reject/Cancel in the reservation details to provide a reason and notify the customer." });
       }
 
       await connection.query(

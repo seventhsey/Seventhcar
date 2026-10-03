@@ -33,6 +33,8 @@
     confirmText = 'Confirm',
     cancelText = 'Cancel',
     tone = 'default',
+    reasonLabel = '',
+    initialReason = '',
   } = {}) {
     return new Promise((resolve) => {
       const backdrop = document.createElement('div');
@@ -52,17 +54,38 @@
       backdrop.querySelector('.ui-dialog-cancel').textContent = cancelText;
       backdrop.querySelector('.ui-dialog-confirm').textContent = confirmText;
 
+      let reasonInput;
+      if (reasonLabel) {
+        const label = document.createElement('label');
+        label.textContent = reasonLabel;
+        label.style.display = 'block';
+        reasonInput = document.createElement('textarea');
+        reasonInput.className = 'form-control';
+        reasonInput.rows = 5;
+        reasonInput.maxLength = 2000;
+        reasonInput.required = true;
+        reasonInput.value = initialReason;
+        label.appendChild(reasonInput);
+        backdrop.querySelector('.ui-dialog').insertBefore(label, backdrop.querySelector('.ui-dialog-actions'));
+      }
+
       function finish(value) {
         backdrop.remove();
         resolve(value);
       }
 
       backdrop.querySelector('.ui-dialog-cancel').addEventListener('click', () => finish(false));
-      backdrop.querySelector('.ui-dialog-confirm').addEventListener('click', () => finish(true));
+      backdrop.querySelector('.ui-dialog-confirm').addEventListener('click', () => {
+        if (!reasonInput) return finish(true);
+        reasonInput.value = reasonInput.value.trim();
+        if (!reasonInput.reportValidity()) return;
+        finish(reasonInput.value);
+      });
       backdrop.addEventListener('click', (event) => {
         if (event.target === backdrop) finish(false);
       });
       document.body.appendChild(backdrop);
+      if (reasonInput) reasonInput.focus();
     });
   };
 
