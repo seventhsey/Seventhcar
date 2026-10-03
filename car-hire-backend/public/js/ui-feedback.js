@@ -37,6 +37,10 @@
     initialReason = '',
   } = {}) {
     return new Promise((resolve) => {
+      const previousFocus = document.activeElement;
+      // Bootstrap keeps focus inside an open modal. Keep this dialog inside it
+      // too, otherwise the modal steals focus from the cancellation textarea.
+      const dialogHost = document.querySelector('.modal.show') || document.body;
       const backdrop = document.createElement('div');
       backdrop.className = 'ui-dialog-backdrop';
       backdrop.innerHTML = `
@@ -71,6 +75,7 @@
 
       function finish(value) {
         backdrop.remove();
+        if (previousFocus && previousFocus.isConnected) previousFocus.focus();
         resolve(value);
       }
 
@@ -84,7 +89,7 @@
       backdrop.addEventListener('click', (event) => {
         if (event.target === backdrop) finish(false);
       });
-      document.body.appendChild(backdrop);
+      dialogHost.appendChild(backdrop);
       if (reasonInput) reasonInput.focus();
     });
   };
