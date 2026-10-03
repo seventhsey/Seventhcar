@@ -1,6 +1,7 @@
 // reservation-modals.js
 
 document.addEventListener("DOMContentLoaded", function () {
+  let statusChangePending = false;
   let carsPromise = null;
   let extrasPromise = null;
 
@@ -68,13 +69,18 @@ document.addEventListener("DOMContentLoaded", function () {
 
       if (event.target.matches("#rejectReservation")) {
         const reservationId = event.target.getAttribute("data-id");
-        const confirmed = await window.uiConfirm({
-          title: "Cancel this booking?",
-          message: "The reservation will be marked Cancelled. This does not send a confirmation email.",
-          confirmText: "Cancel booking",
+        if (statusChangePending) return;
+        const isCancelled = document.getElementById("modalStatus").innerText === "Cancelled";
+        const savedReason = document.getElementById("modalCancellationReason").innerText;
+        const reason = await window.uiConfirm({
+          title: isCancelled ? "Resend cancellation email?" : "Cancel this booking?",
+          message: "This reason will be emailed to the customer. Keep internal notes out of this message.",
+          reasonLabel: "Reason for cancellation (customer will see this)",
+          initialReason: savedReason === "-" ? "" : savedReason,
+          confirmText: isCancelled ? "Resend email" : "Cancel and email customer",
           tone: "danger",
         });
-        if (confirmed) updateReservationStatus(reservationId, "Cancelled");
+        if (reason) updateReservationStatus(reservationId, "Cancelled", reason, isCancelled);
       }
 
       if (event.target.matches("#editReservation")) {
@@ -106,6 +112,9 @@ document.addEventListener("DOMContentLoaded", function () {
         document.getElementById("modalPickupLocation").innerText = reservation.pickup_location || "-";
         document.getElementById("modalDropoffLocation").innerText = reservation.dropoff_location || "-";
         document.getElementById("modalNotes").innerText = reservation.notes || "-";
+        document.getElementById("modalCancellationReason").innerText = reservation.cancellation_reason || "-";
+        document.getElementById("modalCancellationReasonRow").style.display = reservation.cancellation_reason ? "block" : "none";
+        document.getElementById("rejectReservation").textContent = reservation.status === "Cancelled" ? "Resend cancellation email" : "Reject/Cancel";
         document.getElementById("modalPlateNumber").innerText = reservation.plate_number;
         document.getElementById("modalStartDate").innerText = reservation.start_date;
         document.getElementById("modalEndDate").innerText = reservation.end_date;
@@ -177,6 +186,7 @@ document.addEventListener("DOMContentLoaded", function () {
         if (!reservationId) {
           document.getElementById("editReservationForm").reset();
           document.getElementById("editReservationId").value = "";
+          document.querySelector('#editReservationStatus option[value="Cancelled"]').disabled = true;
           populatePlateNumberDropdown(cars);
         } else {
               const { reservation, extras: selectedExtras } = details;
@@ -198,6 +208,7 @@ document.addEventListener("DOMContentLoaded", function () {
               document.getElementById("editPriceOverride").value = hasOverride ? reservation.price_override : "";
               document.getElementById("editPriceOverrideReason").value = reservation.price_override_reason || "";
               document.getElementById("editReservationStatus").value = reservation.status;
+              document.querySelector('#editReservationStatus option[value="Cancelled"]').disabled = reservation.status !== "Cancelled";
               populatePlateNumberDropdown(cars, reservation.plate_number);
 
               selectedExtras.forEach(extra => {
@@ -336,11 +347,15 @@ document.addEventListener("DOMContentLoaded", function () {
       });
   }
 
-  function updateReservationStatus(id, newStatus) {
+  function updateReservationStatus(id, newStatus, cancellationReason = "", resendEmail = false) {
+    if (statusChangePending) return;
+    statusChangePending = true;
+    document.getElementById("rejectReservation").disabled = true;
+    document.getElementById("approveReservation").disabled = true;
     fetch(`/api/reservations/${id}/status`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status: newStatus })
+      body: JSON.stringify({ status: newStatus, cancellation_reason: cancellationReason, resendEmail })
     })
       .then(async response => {
         const result = await response.json();
@@ -351,25 +366,16 @@ document.addEventListener("DOMContentLoaded", function () {
         $("#reservationModal").modal("hide");
         window.fetchReservations();
 
-        if (newStatus === "Approved") {
+        if (result.unchanged) {
+          window.uiNotify(`Reservation is already ${newStatus}. No new email was sent.`, "info");
+        } else if (newStatus === "Approved" || newStatus === "Cancelled") {
+          const label = newStatus === "Cancelled" ? "cancelled" : "confirmed";
           if (result.emailSent) {
-            window.uiNotify(
-              "Booking confirmed and confirmation email sent to the customer.",
-              "success",
-              "Booking confirmed"
-            );
-          } else if (!result.emailConfigured) {
-            window.uiNotify(
-              "Booking confirmed, but email is not configured yet.",
-              "warning",
-              "Booking confirmed"
-            );
+            window.uiNotify(`Booking ${label} and email sent to the customer.`, "success");
+          } else if (result.emailConfigured === false) {
+            window.uiNotify(`Booking ${label}, but email is not configured. Check backend email settings before retrying.`, "warning", "Customer not notified");
           } else {
-            window.uiNotify(
-              result.emailError || "Booking confirmed, but the confirmation email could not be sent.",
-              "warning",
-              "Email not sent"
-            );
+            window.uiNotify(result.emailError || `Booking ${label}, but the email could not be sent.`, "warning", "Customer not notified");
           }
         } else {
           window.uiNotify(`Reservation marked ${newStatus}.`, "success");
@@ -378,6 +384,11 @@ document.addEventListener("DOMContentLoaded", function () {
       .catch(error => {
         console.error("Error updating reservation status:", error);
         window.uiNotify(error.message || "Could not update reservation status.", "error");
+      })
+      .finally(() => {
+        statusChangePending = false;
+        document.getElementById("rejectReservation").disabled = false;
+        document.getElementById("approveReservation").disabled = false;
       });
   }
 

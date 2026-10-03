@@ -64,6 +64,7 @@ async function initializeSchema(pool) {
       "price_override_reason",
       "VARCHAR(255) NULL AFTER `price_override`"
     );
+    await ensureColumn(connection, "reservations", "cancellation_reason", "TEXT NULL");
     await connection.query(
       `CREATE TABLE IF NOT EXISTS car_unavailability (
         id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
