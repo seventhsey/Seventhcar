@@ -3,6 +3,7 @@ const express = require("express");
 const router = express.Router();
 const { sendConfirmedReservationEmail } = require("../services/confirmedReservationEmail");
 const { sendCancelledReservationEmail } = require("../services/cancelledReservationEmail");
+const { describeEmailDeliveryError } = require("../services/emailDeliveryError");
 
 module.exports = (db, { createReservationEditToken } = {}) => {
   function formatDate(dateObj) {
@@ -416,6 +417,7 @@ module.exports = (db, { createReservationEditToken } = {}) => {
     let emailSent = false;
     let emailConfigured = true;
     let emailError = "";
+    let emailErrorCode = "";
     if (newStatus === "Approved" || newStatus === "Cancelled") {
       try {
         const result = newStatus === "Cancelled"
@@ -424,11 +426,13 @@ module.exports = (db, { createReservationEditToken } = {}) => {
         emailConfigured = result.configured;
         emailSent = result.sent;
       } catch (error) {
-        emailError = "The reservation was saved, but the email could not be sent. Check backend logs and retry.";
+        const diagnostic = describeEmailDeliveryError(error);
+        emailErrorCode = diagnostic.code;
+        emailError = `The reservation was saved. ${diagnostic.message}`;
         console.error(`Reservation #${reservationId} ${newStatus} email failed:`, error);
       }
     }
-    return res.json({ success: true, reservationId, previousStatus, status: newStatus, emailConfigured, emailSent, emailError });
+    return res.json({ success: true, reservationId, previousStatus, status: newStatus, emailConfigured, emailSent, emailError, emailErrorCode });
   });
 
   router.put("/:id", async (req, res) => {

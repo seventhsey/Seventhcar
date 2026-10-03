@@ -373,8 +373,11 @@ document.addEventListener("DOMContentLoaded", function () {
           if (result.emailSent) {
             window.uiNotify(`Booking ${label} and email sent to the customer.`, "success");
           } else if (result.emailConfigured === false) {
-            window.uiNotify(`Booking ${label}, but email is not configured. Check backend email settings before retrying.`, "warning", "Customer not notified");
+            const message = `Booking ${label}, but email is not configured. Set EMAIL_USER and EMAIL_APP_PASSWORD on the backend Railway service, deploy the variables, then retry.`;
+            console.warn(`Reservation #${id}: ${message}`);
+            window.uiNotify(message, "warning", "Customer not notified");
           } else {
+            console.warn(`Reservation #${id}: ${result.emailErrorCode || 'EMAIL_SEND_FAILED'}. ${result.emailError || 'Email could not be sent.'}`);
             window.uiNotify(result.emailError || `Booking ${label}, but the email could not be sent.`, "warning", "Customer not notified");
           }
         } else {
