@@ -90,6 +90,27 @@ test('SMTP failure reports undelivered email without losing saved cancellation',
   assert.equal(row.status, 'Cancelled'); assert.equal(response.body.emailSent, false);
   assert.match(response.body.emailError, /retry/);
 });
+test('SMTP timeout gives actionable diagnostics and keeps cancellation saved', async () => {
+  delivery = new Error('Gmail SMTP connection timed out.');
+  const response = await change({ status: 'Cancelled', cancellation_reason: 'Unavailable.' });
+  assert.equal(row.status, 'Cancelled');
+  assert.equal(response.body.emailErrorCode, 'SMTP_CONNECTION_FAILED');
+  assert.match(response.body.emailError, /Hobby plans block SMTP/);
+});
+test('SMTP auth diagnostics do not expose provider response or credentials', async () => {
+  delivery = new Error('SMTP 535: credentials rejected SECRET_PASSWORD customer@example.com');
+  const response = await change({ status: 'Cancelled', cancellation_reason: 'Unavailable.' });
+  assert.equal(response.body.emailErrorCode, 'SMTP_AUTH_FAILED');
+  assert.match(response.body.emailError, /app password/);
+  assert.ok(!response.body.emailError.includes('SECRET_PASSWORD'));
+  assert.ok(!response.body.emailError.includes('customer@example.com'));
+});
+test('missing customer email explains how to repair reservation', async () => {
+  delivery = new Error('Reservation has no customer email address.');
+  const response = await change({ status: 'Cancelled', cancellation_reason: 'Unavailable.' });
+  assert.equal(response.body.emailErrorCode, 'RECIPIENT_MISSING');
+  assert.match(response.body.emailError, /Edit the reservation email/);
+});
 test('write failure rolls back and never emails', async () => {
   failWrite = true;
   const response = await change({ status: 'Cancelled', cancellation_reason: 'Unavailable.' });
