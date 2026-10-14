@@ -27,6 +27,7 @@ type StoredReservation = {
   island?: string;
   dropOff?: string;
   extras?: StoredExtra[];
+  contact?: Partial<Record<"firstName" | "lastName" | "email" | "phone" | "flight_number" | "notes", string>>;
 };
 
 type StoredCar = {
@@ -136,6 +137,12 @@ export default function Contact() {
 
     setData((current) => ({
       ...current,
+      firstName: reservation.contact?.firstName ?? current.firstName,
+      lastName: reservation.contact?.lastName ?? current.lastName,
+      email: reservation.contact?.email ?? current.email,
+      phone: reservation.contact?.phone ?? current.phone,
+      flight_number: reservation.contact?.flight_number ?? current.flight_number,
+      notes: reservation.contact?.notes ?? current.notes,
       start_date: reservation.pickupDate || "",
       start_time: reservation.pickupTime || "",
       end_date: reservation.returnDate || "",
@@ -152,7 +159,14 @@ export default function Contact() {
     value: String(data[key] ?? ""),
     onChange: (
       event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-    ) => setData((current) => ({ ...current, [key]: event.target.value })),
+    ) => {
+      const value = event.target.value;
+      setData((current) => ({ ...current, [key]: value }));
+      const saved = readStoredJson<StoredReservation>("pendingReservation", {});
+      localStorage.setItem("pendingReservation", JSON.stringify({
+        ...saved, contact: { ...saved.contact, [key]: value },
+      }));
+    },
   });
 
   async function submitReservation(confirmed: BookingData) {
