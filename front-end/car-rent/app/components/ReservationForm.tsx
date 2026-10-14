@@ -8,6 +8,33 @@ import DatePicker from "react-datepicker";
 import MobileBookingFields from "./MobileBookingFields";
 import "react-datepicker/dist/react-datepicker.css";
 
+type DraftExtra = number | { id?: number; extra_id?: number; qty?: number };
+type BookingDraft = {
+  island?: string; dropOff?: string;
+  pickupDate?: string; pickupTime?: string; returnDate?: string; returnTime?: string;
+  extras?: DraftExtra[];
+  [key: string]: unknown;
+};
+
+function readDraft(): BookingDraft {
+  try {
+    const value = JSON.parse(localStorage.getItem("pendingReservation") || "{}");
+    return value && typeof value === "object" && !Array.isArray(value) ? value : {};
+  } catch { return {}; }
+}
+
+function locationExtras(draft: BookingDraft, pickup: string, dropoff: string): DraftExtra[] {
+  const extras = (Array.isArray(draft.extras) ? draft.extras : []).filter(extra =>
+    ![9, 10, 11].includes(Number(typeof extra === "number" ? extra : extra?.id ?? extra?.extra_id))
+  );
+  if (pickup === "Other +25 Euro" && dropoff === "Other +25 Euro") extras.push(11);
+  else {
+    if (pickup === "Other +25 Euro") extras.push(9);
+    if (dropoff === "Other +25 Euro") extras.push(10);
+  }
+  return extras;
+}
+
 const ReservationForm = () => {
   const [island, setIsland] = useState("Mahe Airport")
   const [dropOff, setDropOff] = useState("Mahe Airport")
@@ -16,7 +43,7 @@ const ReservationForm = () => {
   const [returnDate, setReturnDate] = useState("")
   const [returnTime, setReturnTime] = useState("12:00")
   const router = useRouter();
-  const [selectedExtras, setSelectedExtras] = useState<number[]>([]);
+  const [restored, setRestored] = useState(false);
 
   // Keep calendar dates in local time. Converting local midnight through
   // toISOString() can shift Seychelles dates to the previous UTC day.
@@ -35,20 +62,27 @@ const ReservationForm = () => {
   };
 
   useEffect(() => {
-    let newExtras: number[] = [...selectedExtras];
-    // Remove IDs 9, 10, 11 if they exist
-    newExtras = newExtras.filter(id => ![9, 10, 11].includes(id));
-    const pickupOther = island === "Other +25 Euro";
-    const dropoffOther = dropOff === "Other +25 Euro";
-    if (pickupOther && dropoffOther) {
-      newExtras.push(11);
-    } else {
-      if (pickupOther) newExtras.push(9);
-      if (dropoffOther) newExtras.push(10);
-    }
-    setSelectedExtras(newExtras);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [island, dropOff]);
+    const saved = readDraft();
+    if (typeof saved.island === "string" && saved.island) setIsland(saved.island);
+    if (typeof saved.dropOff === "string" && saved.dropOff) setDropOff(saved.dropOff);
+    if (typeof saved.pickupDate === "string") setPickupDate(saved.pickupDate);
+    if (typeof saved.returnDate === "string") setReturnDate(saved.returnDate);
+    if (typeof saved.pickupTime === "string" && saved.pickupTime) setPickupTime(saved.pickupTime);
+    if (typeof saved.returnTime === "string" && saved.returnTime) setReturnTime(saved.returnTime);
+    setRestored(true);
+  }, []);
+
+  useEffect(() => {
+    if (!restored) return;
+    const saved = readDraft();
+    const periodChanged = saved.pickupDate !== pickupDate || saved.pickupTime !== pickupTime ||
+      saved.returnDate !== returnDate || saved.returnTime !== returnTime;
+    if (periodChanged) localStorage.removeItem("selectedCar");
+    localStorage.setItem("pendingReservation", JSON.stringify({
+      ...saved, island, dropOff, pickupDate, pickupTime, returnDate, returnTime,
+      extras: locationExtras(saved, island, dropOff),
+    }));
+  }, [restored, island, dropOff, pickupDate, pickupTime, returnDate, returnTime]);
 
   const handleSubmit = () => {
     if (!island || !dropOff || !pickupDate || !pickupTime || !returnDate || !returnTime) {
@@ -63,7 +97,8 @@ const ReservationForm = () => {
       return
     }
     // Save reservation locally (for payment step later)
-    const reservation = { island, dropOff, pickupDate, pickupTime, returnDate, returnTime, extras: selectedExtras }
+    const saved = readDraft();
+    const reservation = { ...saved, island, dropOff, pickupDate, pickupTime, returnDate, returnTime, extras: locationExtras(saved, island, dropOff) }
     localStorage.setItem("pendingReservation", JSON.stringify(reservation))
     router.push("/vehicles");
   }
