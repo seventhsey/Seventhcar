@@ -5,6 +5,7 @@ import { ChevronDown, MapPin, CalendarDays, PencilLine } from "lucide-react"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
 import DatePicker from "react-datepicker";
+import MobileBookingFields from "./MobileBookingFields";
 import "react-datepicker/dist/react-datepicker.css";
 
 const ReservationForm = () => {
@@ -88,8 +89,23 @@ const ReservationForm = () => {
       <div
         className="w-full max-w-[calc(100vw-2rem)] md:max-w-7xl mx-auto bg-white py-4 md:py-8 md:px-10 px-6 rounded-2xl shadow-xl flex flex-col"
       >
+        <MobileBookingFields
+          values={{ island, dropOff, pickupDate, pickupTime, returnDate, returnTime }}
+          onChange={(field, value) => {
+            if (field === "island") setIsland(value)
+            if (field === "dropOff") setDropOff(value)
+            if (field === "pickupDate") setPickupDate(value)
+            if (field === "pickupTime") {
+              setPickupTime(value)
+              setReturnTime(value)
+            }
+            if (field === "returnDate") setReturnDate(value)
+            if (field === "returnTime") setReturnTime(value)
+          }}
+          onNext={handleSubmit}
+        />
         {/* Island Selection */}
-        <div className="mb-6">
+        <div className="hidden md:block mb-6">
           <label className="block text-sm font-bold mb-1">Island</label>
           <div className="flex flex-col md:flex-row md:gap-4">
             {/* Pickup location */}
@@ -138,7 +154,7 @@ const ReservationForm = () => {
         </div>
 
         {/* Main Form Row */}
-        <div className="flex flex-col md:flex-row md:items-end gap-4 md:mb-6">
+        <div className="hidden md:flex md:flex-row md:items-end gap-4 md:mb-6">
           {/* Pickup Date/Time */}
           <div className="w-full">
             <label className="block text-sm font-bold mb-1">Pickup Date/Time</label>
