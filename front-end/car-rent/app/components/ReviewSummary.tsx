@@ -22,6 +22,7 @@ export type ReservationExtra = {
 export type AvailableExtra = {
   id: number;
   name: string;
+  max_quantity?: number;
   price: number;
   charge_type?: "daily" | "once";
 };

@@ -1,4 +1,3 @@
-const SEAT_EXTRA_IDS = new Set([4, 5]);
 const PROTECTION_EXTRA_IDS = new Set([1, 2, 3]);
 const LOCATION_EXTRA_IDS = new Set([9, 10, 11]);
 
@@ -60,18 +59,8 @@ function getTierMultiplier(days) {
 }
 
 function getMaxQuantity(extra) {
-  const id = Number(extra.id);
-  const name = String(extra.name || "").toLowerCase();
-
-  if (
-    SEAT_EXTRA_IDS.has(id) ||
-    name.includes("baby seat") ||
-    name.includes("child seat")
-  ) {
-    return 3;
-  }
-
-  return 1;
+  const limit = Number(extra.max_quantity);
+  return Number.isInteger(limit) && limit >= 1 && limit <= 999 ? limit : 1;
 }
 
 function parseRequestedExtras(items) {
@@ -167,7 +156,7 @@ async function calculateReservationQuote(db, payload = {}) {
     const extrasQuery = ids.length > 0
       ? query(
           db,
-          `SELECT id, name, price, charge_type FROM extras WHERE id IN (${ids.map(() => "?").join(",")})`,
+          `SELECT id, name, price, charge_type, max_quantity FROM extras WHERE id IN (${ids.map(() => "?").join(",")})`,
           ids
         )
       : Promise.resolve([]);

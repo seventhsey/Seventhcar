@@ -31,16 +31,20 @@ module.exports = (db) => {
   });
 
   router.post("/", (req, res) => {
-    const { name, price, description, charge_type } = req.body;
+    const { name, price, description, charge_type, max_quantity } = req.body;
     const chargeType = charge_type === "once" ? "once" : "daily";
+    const maxQuantity = max_quantity === undefined ? 1 : Number(max_quantity);
+    if (typeof max_quantity === "boolean" || !Number.isInteger(maxQuantity) || maxQuantity < 1 || maxQuantity > 999) {
+      return res.status(400).json({ error: "Limit per booking must be a whole number from 1 to 999." });
+    }
 
     if (!name || price == null) {
       return res.status(400).json({ error: "Name and price are required" });
     }
 
     db.query(
-      "INSERT INTO extras (name, price, description, charge_type) VALUES (?, ?, ?, ?)",
-      [name, price, description || null, chargeType],
+      "INSERT INTO extras (name, price, description, charge_type, max_quantity) VALUES (?, ?, ?, ?, ?)",
+      [name, price, description || null, chargeType, maxQuantity],
       (error, result) => {
         if (error) {
           console.error("Database error creating extra:", error);
@@ -52,22 +56,27 @@ module.exports = (db) => {
           price,
           description: description || null,
           charge_type: chargeType,
+          max_quantity: maxQuantity,
         });
       }
     );
   });
 
   router.put("/:id", (req, res) => {
-    const { name, price, description, charge_type } = req.body;
+    const { name, price, description, charge_type, max_quantity } = req.body;
     const chargeType = charge_type === "once" ? "once" : "daily";
+    const maxQuantity = max_quantity === undefined ? 1 : Number(max_quantity);
+    if (typeof max_quantity === "boolean" || !Number.isInteger(maxQuantity) || maxQuantity < 1 || maxQuantity > 999) {
+      return res.status(400).json({ error: "Limit per booking must be a whole number from 1 to 999." });
+    }
 
     if (!name || price == null) {
       return res.status(400).json({ error: "Name and price are required" });
     }
 
     db.query(
-      "UPDATE extras SET name = ?, price = ?, description = ?, charge_type = ? WHERE id = ?",
-      [name, price, description || null, chargeType, req.params.id],
+      "UPDATE extras SET name = ?, price = ?, description = ?, charge_type = ?, max_quantity = ? WHERE id = ?",
+      [name, price, description || null, chargeType, maxQuantity, req.params.id],
       (error, result) => {
         if (error) {
           console.error("Database error updating extra:", error);
@@ -82,6 +91,7 @@ module.exports = (db) => {
           price,
           description: description || null,
           charge_type: chargeType,
+          max_quantity: maxQuantity,
         });
       }
     );

@@ -34,6 +34,13 @@ async function initializeSchema(pool) {
       throw new Error("Timed out waiting for the database migration lock.");
     }
 
+    if (!(await columnExists(connection, "extras", "max_quantity"))) {
+      await ensureColumn(connection, "extras", "max_quantity", "SMALLINT UNSIGNED NOT NULL DEFAULT 1");
+      // Preserve existing seat limits once; all future limits belong to the extra record.
+      await connection.query(`UPDATE extras SET max_quantity = 3
+        WHERE id IN (4, 5) OR LOWER(name) LIKE '%baby seat%' OR LOWER(name) LIKE '%child seat%'`);
+    }
+
     await ensureColumn(
       connection,
       "reservations",

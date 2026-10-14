@@ -95,6 +95,7 @@ export default function Contact() {
         setAvailableExtras(
           (Array.isArray(result) ? result : []).map((extra) => ({
             id: Number(extra.id),
+            max_quantity: Number(extra.max_quantity || 1),
             name: String(extra.name || `Extra ${extra.id}`),
             price: Number(extra.price || 0),
             charge_type: extra.charge_type === "once" ? "once" : "daily",

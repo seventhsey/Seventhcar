@@ -47,6 +47,7 @@
             <div class="form-group"><label for="extraName">Name</label><input type="text" class="form-control" id="extraName" placeholder="Insurance, GPS, etc." /></div>
             <div class="form-group"><label for="extraPrice">Price (EUR)</label><input type="number" step="0.01" class="form-control" id="extraPrice" placeholder="9.99" /></div>
             <div class="form-group"><label for="extraDescription">Description</label><textarea class="form-control" id="extraDescription" rows="3"></textarea></div>
+            <div class="form-group"><label for="extraMaxQuantity">Limit per booking</label><input type="number" min="1" max="999" step="1" value="1" required class="form-control" id="extraMaxQuantity" /><small class="form-text text-muted">Maximum units of this extra in one booking (e.g. 3 child seats or 1 prepaid fuel).</small></div>
             <div class="form-group"><label>Charge Type</label><select class="form-control" id="extraChargeType"><option value="daily">Daily charge</option><option value="once">One-time charge</option></select></div>
           </form>
         </div>
