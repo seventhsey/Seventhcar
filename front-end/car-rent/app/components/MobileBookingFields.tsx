@@ -46,6 +46,9 @@ export default function MobileBookingFields({ values, onChange, onNext }: {
   const nextButton = useRef<HTMLButtonElement>(null)
   const complete = useRef(false)
   const optionsPanel = useRef<HTMLDivElement>(null)
+  const touchStart = useRef<{ x: number; y: number } | null>(null)
+  const previousMonth = useRef<HTMLButtonElement>(null)
+  const nextMonth = useRef<HTMLButtonElement>(null)
   const active = step === null ? null : fields[step]
   const field = active?.[0]
 
@@ -116,13 +119,41 @@ export default function MobileBookingFields({ values, onChange, onNext }: {
               <button type="button" onClick={() => setStep(null)} aria-label="Close selection" className="p-3 rounded-lg hover:bg-gray-100"><X className="h-5 w-5" /></button>
             </div>
             {isDate ? (
-              <div className="flex justify-center overflow-x-auto">
+              <div>
+              <p className="mb-2 text-center text-xs text-gray-500">Swipe left or right to change month</p>
+              <div className="flex justify-center overflow-x-auto" style={{ touchAction: "pan-y" }}
+                onTouchStart={event => {
+                  const touch = event.touches[0]
+                  touchStart.current = event.touches.length === 1 ? { x: touch.clientX, y: touch.clientY } : null
+                }}
+                onTouchCancel={() => { touchStart.current = null }}
+                onTouchEndCapture={event => {
+                  const start = touchStart.current
+                  touchStart.current = null
+                  if (!start) return
+                  const touch = event.changedTouches[0]
+                  const dx = touch.clientX - start.x
+                  const dy = touch.clientY - start.y
+                  if (Math.abs(dx) < 50 || Math.abs(dx) < Math.abs(dy) * 1.5) return
+                  event.preventDefault()
+                  event.stopPropagation()
+                  if (dx < 0) nextMonth.current?.click()
+                  else previousMonth.current?.click()
+                }}>
                 <DatePicker
                   inline
+                  renderCustomHeader={({ date, decreaseMonth, increaseMonth, prevMonthButtonDisabled, nextMonthButtonDisabled }) => (
+                    <div className="flex items-center justify-between px-2 gap-2">
+                      <button ref={previousMonth} type="button" aria-label="Previous month" disabled={prevMonthButtonDisabled} onClick={decreaseMonth} className="min-h-11 min-w-11 text-xl disabled:opacity-30">‹</button>
+                      <span aria-live="polite" className="font-semibold">{date.toLocaleDateString("en", { month: "long", year: "numeric" })}</span>
+                      <button ref={nextMonth} type="button" aria-label="Next month" disabled={nextMonthButtonDisabled} onClick={increaseMonth} className="min-h-11 min-w-11 text-xl disabled:opacity-30">›</button>
+                    </div>
+                  )}
                   selected={parseDate(values[field!])}
                   onSelect={date => { if (date) choose(formatDate(date)) }}
                   minDate={field === "returnDate" ? parseDate(values.pickupDate) || new Date() : new Date()}
                 />
+              </div>
               </div>
             ) : (
               <div ref={optionsPanel} className={`grid gap-2 max-h-[55dvh] overflow-y-auto ${options === times ? "grid-cols-3" : "grid-cols-1"}`}>

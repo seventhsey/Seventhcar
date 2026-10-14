@@ -108,3 +108,19 @@
     border-radius: 6px;
     padding: 10px;
 }
+
+/* Expanding one car must not stretch its neighbours. Bootstrap columns supply widths. */
+#carContainer { align-items: flex-start; gap: 0; }
+.car-unavailability > summary { cursor: pointer; min-height: 44px; padding: 10px 0; font-weight: 600; }
+.availability-warning { color: #b42318; }
+.unavailability-date-field { min-width: 0; }
+.car-card .unavailability-date-button { width: 100%; margin: 0 0 6px; background: #fff; color: #333; border: 1px solid #aaa; text-align: left; }
+.unavailability-calendar { margin: 8px 0; padding: 6px; border: 1px solid #ccc; border-radius: 6px; background: #fff; }
+.unavailability-calendar-header { display: flex; align-items: center; justify-content: space-between; gap: 4px; font-size: .85rem; }
+.unavailability-calendar-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); text-align: center; gap: 2px; }
+.unavailability-calendar-grid > span { font-size: .7rem; padding: 6px 0; }
+.car-card .unavailability-calendar button { margin: 0; padding: 4px; min-height: 36px; background: #f0f3f5; color: #222; font-size: .8rem; }
+.car-card .unavailability-calendar-header button { min-width: 36px; }
+.car-card .unavailability-calendar [aria-pressed="true"] { background: #167a7c; color: #fff; }
+.car-card .unavailability-calendar button:hover { background: #dceeed; }
+.unavailability-date-field input[type="time"] { min-width: 0; width: 100%; }

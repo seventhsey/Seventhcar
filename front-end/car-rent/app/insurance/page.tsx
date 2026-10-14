@@ -35,14 +35,6 @@ type ExtraRecord = {
 
 type StoredExtra = number | { id?: number };
 
-type PendingReservation = {
-  pickupDate?: string;
-  pickupTime?: string;
-  returnDate?: string;
-  returnTime?: string;
-  extras?: StoredExtra[];
-};
-
 const insuranceData: IInsuranceItem[] = [
   {
     title: "Step 2. - Choosing insurance",
@@ -71,36 +63,10 @@ const insuranceData: IInsuranceItem[] = [
 // Plan key to extra ID mapping (from your IDs above)
 const protectionExtraIds = { basic: 1, medium: 2, full: 3 };
 
-function getPendingReservation(): PendingReservation | null {
-  if (typeof window === "undefined") return null;
-  try {
-    return JSON.parse(localStorage.getItem("pendingReservation") || "{}");
-  } catch {
-    return null;
-  }
-}
-
 // Get extra price by ID
 function getExtraPrice(id: number, allExtras: ExtraRecord[]) {
   const found = allExtras.find((extra) => Number(extra.id) === id);
   return found ? Number(found.price) : 0;
-}
-
-// Keep this aligned with the authoritative backend pricing calculation.
-function getBookingDays(reservation: PendingReservation | null) {
-  if (
-    !reservation?.pickupDate ||
-    !reservation?.returnDate ||
-    !reservation?.pickupTime ||
-    !reservation?.returnTime
-  ) return 1;
-
-  const start = new Date(`${reservation.pickupDate}T00:00:00`);
-  const end = new Date(`${reservation.returnDate}T00:00:00`);
-  let days = Math.floor((end.getTime() - start.getTime()) / 86400000) + 1;
-
-  if (reservation.returnTime > reservation.pickupTime) days += 1;
-  return Math.max(1, days);
 }
 
 const Insurance = () => {
@@ -129,8 +95,6 @@ reservation.extras = [...withoutOldInsurance, protectionId];
   };
   // -- Calculate dynamic prices --
   const [allExtras, setAllExtras] = useState<ExtraRecord[]>([]);
-  const reservation = getPendingReservation();
-  const bookingDays = getBookingDays(reservation);
 
   useEffect(() => {
   fetch(`${process.env.NEXT_PUBLIC_API_URL}/extras`)
@@ -215,9 +179,9 @@ reservation.extras = [...withoutOldInsurance, protectionId];
               {/* Mobile protection price (Bottom) */}
               <div className="flex justify-end items-end mt-10 gap-1 leading-none">
                 <span className="text-4xl font-bold">
-                  {protectionPrices[activeTab] * bookingDays}
+                  {activeTab === "basic" && protectionPrices.basic === 0 ? "Free" : protectionPrices[activeTab]}
                 </span>
-                <span className="text-sm pb-[2px]">EUR protection total</span>
+                {!(activeTab === "basic" && protectionPrices.basic === 0) && <span className="text-sm pb-[2px]">EUR / day</span>}
               </div>
               <div className="flex justify-end mt-4">
   <button
@@ -291,12 +255,12 @@ reservation.extras = [...withoutOldInsurance, protectionId];
                 );
               })}
 
-              {/* Protection price for the selected rental length */}
+              {/* Daily protection price */}
               <tr>
-                <td className="p-3 font-bold">Protection total ({bookingDays} day(s))</td>
+                <td className="p-3 font-bold">Protection per day</td>
                 {plans.map((planKey) => (
                   <td key={planKey} className="font-bold text-2xl">
-                    {protectionPrices[planKey] * bookingDays} EUR
+                    {planKey === "basic" && protectionPrices.basic === 0 ? "Free" : `${protectionPrices[planKey]} EUR / day`}
                   </td>
                 ))}
               </tr>
