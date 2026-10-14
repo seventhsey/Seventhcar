@@ -107,9 +107,134 @@ function formatDateTime(value) {
   });
 }
 
+// Each date field owns its calendar and closes after one day selection.
+function buildUnavailableDateField(label, inputClass) {
+  const element = document.createElement('div');
+  element.className = 'unavailability-date-field';
+  const caption = document.createElement('div');
+  caption.textContent = label;
+  caption.className = 'font-weight-bold mb-1';
+  const input = document.createElement('input');
+  input.type = 'hidden';
+  input.className = inputClass;
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'unavailability-date-button';
+  button.textContent = 'Choose date';
+  button.setAttribute('aria-label', `${label}: choose date`);
+  button.setAttribute('aria-expanded', 'false');
+  const time = document.createElement('input');
+  time.type = 'time';
+  time.value = '12:00';
+  time.className = 'form-control form-control-sm';
+  time.setAttribute('aria-label', `${label}: time`);
+  const calendar = document.createElement('div');
+  calendar.className = 'unavailability-calendar';
+  calendar.hidden = true;
+  calendar.setAttribute('role', 'group');
+  calendar.setAttribute('aria-label', `${label}: select one date`);
+  let selected = '';
+  let month = new Date();
+  month = new Date(month.getFullYear(), month.getMonth(), 1);
+  const format = date => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+  const sync = () => { input.value = selected && time.value ? `${selected}T${time.value}` : ''; };
+  const close = () => {
+    calendar.hidden = true;
+    button.setAttribute('aria-expanded', 'false');
+  };
+  const render = () => {
+    calendar.replaceChildren();
+    const header = document.createElement('div');
+    header.className = 'unavailability-calendar-header';
+    const title = document.createElement('span');
+    title.textContent = month.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
+    title.setAttribute('aria-live', 'polite');
+    const nav = (text, offset) => {
+      const control = document.createElement('button');
+      control.type = 'button';
+      control.textContent = text;
+      control.setAttribute('aria-label', offset < 0 ? 'Previous month' : 'Next month');
+      control.onclick = () => {
+        month = new Date(month.getFullYear(), month.getMonth() + offset, 1);
+        render();
+        calendar.querySelector(`[aria-label="${control.getAttribute('aria-label')}"]`).focus();
+      };
+      return control;
+    };
+    header.append(nav('‹', -1), title, nav('›', 1));
+    const grid = document.createElement('div');
+    grid.className = 'unavailability-calendar-grid';
+    ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].forEach(day => {
+      const cell = document.createElement('span');
+      cell.textContent = day;
+      grid.appendChild(cell);
+    });
+    for (let i = 0; i < month.getDay(); i++) grid.appendChild(document.createElement('span'));
+    const last = new Date(month.getFullYear(), month.getMonth() + 1, 0).getDate();
+    for (let day = 1; day <= last; day++) {
+      const date = new Date(month.getFullYear(), month.getMonth(), day);
+      const value = format(date);
+      const choice = document.createElement('button');
+      choice.type = 'button';
+      choice.textContent = String(day);
+      choice.setAttribute('aria-label', date.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }));
+      choice.setAttribute('aria-pressed', String(value === selected));
+      choice.onclick = () => {
+        selected = value;
+        sync();
+        button.textContent = date.toLocaleDateString('en-GB');
+        button.setAttribute('aria-label', `${label}: ${button.textContent}`);
+        close();
+        button.focus();
+      };
+      grid.appendChild(choice);
+    }
+    const cancel = document.createElement('button');
+    cancel.type = 'button';
+    cancel.textContent = 'Close calendar';
+    cancel.onclick = () => { close(); button.focus(); };
+    calendar.append(header, grid, cancel);
+  };
+  button.onclick = () => {
+    if (!calendar.hidden) { close(); return; }
+    element.closest('.unavailability-form')?.querySelectorAll('.unavailability-calendar').forEach(other => {
+      other.hidden = true;
+      other.parentElement.querySelector('.unavailability-date-button').setAttribute('aria-expanded', 'false');
+    });
+    render();
+    calendar.hidden = false;
+    button.setAttribute('aria-expanded', 'true');
+  };
+  calendar.addEventListener('keydown', event => {
+    if (event.key === 'Escape') { event.stopPropagation(); close(); button.focus(); }
+  });
+  time.addEventListener('input', sync);
+  time.addEventListener('change', sync);
+  element.append(caption, input, button, time, calendar);
+  return {
+    element,
+    setDisabled(disabled) {
+      button.disabled = disabled;
+      time.disabled = disabled;
+      input.disabled = disabled;
+      close();
+      input.value = disabled ? '' : selected && time.value ? `${selected}T${time.value}` : '';
+    },
+  };
+}
+
 function buildUnavailabilitySection(car, unavailablePeriods, container) {
-  const section = document.createElement('div');
+  const section = document.createElement('details');
   section.className = 'car-unavailability mt-3';
+  const summary = document.createElement('summary');
+  const affectedCount = new Set(unavailablePeriods.flatMap(period =>
+    Array.isArray(period.affected_reservation_ids) ? period.affected_reservation_ids : []
+  )).size;
+  summary.textContent = unavailablePeriods.length
+    ? `Availability: ${unavailablePeriods.length} block(s)${affectedCount ? ` · ${affectedCount} affected booking(s)` : ''}`
+    : 'Availability / Mark unavailable';
+  if (affectedCount) summary.classList.add('availability-warning');
+  section.appendChild(summary);
 
   if (unavailablePeriods.length) {
     const heading = document.createElement('div');
@@ -186,10 +311,8 @@ function buildUnavailabilitySection(car, unavailablePeriods, container) {
   form.hidden = true;
   const openEndedId = `open-ended-${String(car.plate_number).replace(/[^a-zA-Z0-9_-]/g, '-')}`;
   form.innerHTML = `
-    <label>Unavailable from</label>
-    <input type="datetime-local" class="form-control form-control-sm unavailable-start">
-    <label class="mt-2">Unavailable until</label>
-    <input type="datetime-local" class="form-control form-control-sm unavailable-end">
+    <div class="unavailable-start-field"></div>
+    <div class="unavailable-end-field mt-2"></div>
     <div class="form-check mt-2 text-left">
       <input class="form-check-input unavailable-open-ended" type="checkbox" id="${openEndedId}">
       <label class="form-check-label" for="${openEndedId}">Until manually reactivated</label>
@@ -197,6 +320,11 @@ function buildUnavailabilitySection(car, unavailablePeriods, container) {
     <label class="mt-2">Reason</label>
     <input type="text" maxlength="255" class="form-control form-control-sm unavailable-reason-input" placeholder="Breakdown, maintenance, inspection…">
   `;
+
+  const startField = buildUnavailableDateField('Unavailable from', 'unavailable-start');
+  const endField = buildUnavailableDateField('Unavailable until', 'unavailable-end');
+  form.querySelector('.unavailable-start-field').appendChild(startField.element);
+  form.querySelector('.unavailable-end-field').appendChild(endField.element);
 
   const saveButton = document.createElement('button');
   saveButton.type = 'button';
@@ -206,11 +334,13 @@ function buildUnavailabilitySection(car, unavailablePeriods, container) {
 
   toggleButton.addEventListener('click', () => {
     form.hidden = !form.hidden;
+    toggleButton.textContent = form.hidden ? 'Mark unavailable' : 'Close form';
+    toggleButton.setAttribute('aria-expanded', String(!form.hidden));
   });
+  toggleButton.setAttribute('aria-expanded', 'false');
   const endInput = form.querySelector('.unavailable-end');
   form.querySelector('.unavailable-open-ended').addEventListener('change', event => {
-    endInput.disabled = event.target.checked;
-    if (event.target.checked) endInput.value = '';
+    endField.setDisabled(event.target.checked);
   });
   saveButton.addEventListener('click', async () => {
     const startAt = form.querySelector('.unavailable-start').value;
@@ -219,6 +349,11 @@ function buildUnavailabilitySection(car, unavailablePeriods, container) {
     const reason = form.querySelector('.unavailable-reason-input').value.trim();
     if (!startAt || (!openEnded && !endAt) || !reason) {
       window.uiNotify('Enter the start, end (or until reactivated), and reason.', 'warning');
+      return;
+    }
+
+    if (endAt && new Date(endAt) <= new Date(startAt)) {
+      window.uiNotify('The end must be after the start of the unavailable period.', 'warning');
       return;
     }
 

@@ -32,7 +32,7 @@
   #tableContainer th, #tableContainer td { padding: .65rem; }
   #tableContainer td:first-child, #tableContainer th:first-child { position: sticky; left: 0; z-index: 1; background: #fff; }
   #tableContainer th:first-child { background: #343a40; }
-  #carContainer { gap: 12px; }
+  #carContainer { gap: 0; }
   .car-card { flex: 1 1 100%; min-width: 0; padding: 16px; margin: 0; overflow-wrap: anywhere; }
   .car-card img { max-height: 220px; object-fit: contain; }
   .car-card button { min-height: 44px; }
