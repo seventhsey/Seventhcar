@@ -7,6 +7,7 @@
     <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet"/>
     <link rel="stylesheet" href="/css/reservations.css" />
     <link rel="stylesheet" href="/css/ui-feedback.css" />
+  <link rel="stylesheet" href="/css/admin-mobile.css" />
 </head>
 <body>
 <div id="navbar-placeholder"></div>
@@ -24,7 +25,7 @@
 <div class="container mt-5">
   <h2 class="mb-4">Manage Reservations</h2>
 
-  <div class="d-flex justify-content-between mb-3">
+  <div class="reservation-filters d-flex justify-content-between mb-3">
     <input
       type="text"
       id="searchReservations"
@@ -44,7 +45,8 @@
     <button id="addReservationBtn" class="btn btn-success">Add New Reservation</button>
   </div>
 
-  <div id="tableContainer">
+  <p class="mobile-table-hint">Swipe the table sideways to see all details and actions.</p>
+  <div id="tableContainer" role="region" aria-label="Reservations table" tabindex="0">
     <table class="table table-bordered table-hover">
       <thead class="thead-dark">
   <tr>

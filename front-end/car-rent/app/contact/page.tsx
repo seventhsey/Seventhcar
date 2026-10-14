@@ -8,7 +8,7 @@ import {
   Plane,
   UserPlus,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { useRouter } from "next/navigation";
 import ReviewSummary, {
   AvailableExtra,
@@ -247,12 +247,13 @@ export default function Contact() {
         <div className="w-full max-w-5xl mx-auto">
           <div className="p-6 bg-white text-black rounded-2xl">
             <h2 className="text-2xl font-bold mb-6">Basic information</h2>
+            <p className="mb-4 text-sm text-gray-600"><span className="text-red-600">*</span> Required fields</p>
             <form className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <TextField label="First name" icon={<UserPlus />} inputProps={{ type: "text", placeholder: "Enter first name", ...bind("firstName") }} />
-              <TextField label="Last name" icon={<UserPlus />} inputProps={{ type: "text", placeholder: "Enter last name", ...bind("lastName") }} />
+              <TextField required label="First name" icon={<UserPlus />} inputProps={{ type: "text", placeholder: "Enter first name", ...bind("firstName") }} />
+              <TextField required label="Last name" icon={<UserPlus />} inputProps={{ type: "text", placeholder: "Enter last name", ...bind("lastName") }} />
               <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-4">
-                <TextField label="E-mail" icon={<Mail />} inputProps={{ type: "email", placeholder: "Enter e-mail", ...bind("email") }} />
-                <TextField label="Phone" icon={<Phone />} inputProps={{ type: "tel", placeholder: "Enter phone number", ...bind("phone") }} />
+                <TextField required label="E-mail" icon={<Mail />} inputProps={{ type: "email", placeholder: "Enter e-mail", ...bind("email") }} />
+                <TextField required label="Phone" icon={<Phone />} inputProps={{ type: "tel", placeholder: "Enter phone number", ...bind("phone") }} />
                 <TextField label="Flight number" icon={<Plane />} inputProps={{ type: "text", placeholder: "Enter flight number", ...bind("flight_number") }} />
               </div>
               <div className="relative md:col-span-2">
@@ -328,15 +329,18 @@ function TextField({
   label,
   icon,
   inputProps,
+  required = false,
 }: {
+  required?: boolean;
   label: string;
   icon: React.ReactNode;
   inputProps: React.InputHTMLAttributes<HTMLInputElement>;
 }) {
+  const id = useId();
   return (
     <div className="relative">
-      <label className="block text-sm font-semibold mb-1">{label}</label>
-      <input className="w-full bg-gray-100 rounded-lg py-2 px-4 pl-10 outline-none" {...inputProps} />
+      <label htmlFor={id} className="block text-sm font-semibold mb-1">{label}{required && <span className="text-red-600 ml-1" aria-hidden="true">*</span>}</label>
+      <input id={id} required={required} aria-required={required} className="w-full bg-gray-100 rounded-lg py-2 px-4 pl-10 outline-none" {...inputProps} />
       <span className="absolute bg-white p-1 -left-2 top-8 text-blue-500 rounded-full [&>svg]:w-6 [&>svg]:h-6">
         {icon}
       </span>
