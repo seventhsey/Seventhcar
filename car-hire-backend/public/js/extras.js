@@ -44,6 +44,7 @@ document.addEventListener("DOMContentLoaded", function() {
           <h5>${extra.name}</h5>
           <p>Price: ${extra.price} EUR ${extra.charge_type === "once" ? "(one-time)" : "per day"}</p>
           <p>${extra.description || ""}</p>
+          <p><strong>Limit per booking:</strong> ${Number(extra.max_quantity) || 1}</p>
           <p><strong>Charge:</strong> ${extra.charge_type === "once" ? "One-time charge" : "Daily charge"}</p>
           <button class="btn btn-sm btn-primary mr-2" data-id="${extra.id}">Edit</button>
           <button class="btn btn-sm btn-danger" data-id="${extra.id}">Delete</button>
@@ -64,6 +65,7 @@ document.addEventListener("DOMContentLoaded", function() {
     document.getElementById("extraPrice").value = extra.price;
     document.getElementById("extraDescription").value = extra.description || "";
     document.getElementById("extraChargeType").value = extra.charge_type || "daily";
+    document.getElementById("extraMaxQuantity").value = extra.max_quantity || 1;
     $("#extrasModal").modal("show");
   }
 
@@ -94,6 +96,7 @@ document.addEventListener("DOMContentLoaded", function() {
     document.getElementById("extraPrice").value = "";
     document.getElementById("extraDescription").value = "";
     document.getElementById("extraChargeType").value = "daily";
+    document.getElementById("extraMaxQuantity").value = 1;
   }
 
   function saveExtra() {
@@ -108,7 +111,12 @@ document.addEventListener("DOMContentLoaded", function() {
       return;
     }
 
-    const payload = { name, price, description, charge_type };
+    const max_quantity = Number(document.getElementById("extraMaxQuantity").value);
+    if (!Number.isInteger(max_quantity) || max_quantity < 1 || max_quantity > 999) {
+      window.uiNotify("Limit per booking must be a whole number from 1 to 999.", "warning");
+      return;
+    }
+    const payload = { name, price, description, charge_type, max_quantity };
     const url = id ? `/api/extras/${id}` : "/api/extras";
     const method = id ? "PUT" : "POST";
 

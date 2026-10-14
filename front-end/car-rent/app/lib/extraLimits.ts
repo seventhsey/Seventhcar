@@ -1,25 +1,14 @@
 export type ExtraLimitInput = {
+  max_quantity?: number | string;
   id?: number;
   extra_id?: number;
   name?: string;
   charge_type?: "daily" | "once" | string;
 };
 
-const SEAT_EXTRA_IDS = new Set([4, 5]);
-
 export function getExtraMaxQuantity(extra: ExtraLimitInput): number {
-  const id = Number(extra.id ?? extra.extra_id ?? 0);
-  const name = String(extra.name || "").toLowerCase();
-
-  if (
-    SEAT_EXTRA_IDS.has(id) ||
-    name.includes("baby seat") ||
-    name.includes("child seat")
-  ) {
-    return 3;
-  }
-
-  return 1;
+  const limit = Number(extra.max_quantity);
+  return Number.isInteger(limit) && limit >= 1 && limit <= 999 ? limit : 1;
 }
 
 export function clampExtraQuantity(

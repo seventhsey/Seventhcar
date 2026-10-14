@@ -10,6 +10,7 @@ const ignoreIds = [1, 2, 3, 9, 10, 11];
 type Extra = {
   id: number;
   name: string;
+  max_quantity?: number;
   price: number | string;
   short_desc?: string;
   description?: string;
