@@ -14,6 +14,7 @@
     <li class="nav-item">
       <a class="nav-link font-weight-bold" id="extrasLink" href="/extras" style="font-size: 1.1rem;">Extras</a>
     </li>
+    <li class="nav-item"><a class="nav-link font-weight-bold" href="/account">Account</a></li>
     <li class="nav-item">
       <a class="nav-link font-weight-bold" id="logoutLink" href="/logout" style="font-size: 1.1rem;">Logout</a>
     </li>

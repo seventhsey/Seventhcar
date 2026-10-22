@@ -34,6 +34,18 @@ async function initializeSchema(pool) {
       throw new Error("Timed out waiting for the database migration lock.");
     }
 
+    if (!(await columnExists(connection, "users", "account_role"))) {
+      await ensureColumn(connection, "users", "account_role", "VARCHAR(16) NOT NULL DEFAULT 'admin'");
+    }
+    // Also recover safely if a previous startup stopped just after adding the column.
+    const [owners] = await connection.query("SELECT id FROM users WHERE account_role = 'owner' LIMIT 1");
+    if (!owners.length) {
+      const [users] = await connection.query("SELECT id FROM users ORDER BY id LIMIT 1");
+      if (users.length) await connection.query("UPDATE users SET account_role = 'owner' WHERE id = ?", [users[0].id]);
+    }
+    await ensureColumn(connection, "users", "is_active", "TINYINT(1) NOT NULL DEFAULT 1");
+    await ensureColumn(connection, "users", "password_version", "INT UNSIGNED NOT NULL DEFAULT 0");
+
     if (!(await columnExists(connection, "extras", "max_quantity"))) {
       await ensureColumn(connection, "extras", "max_quantity", "SMALLINT UNSIGNED NOT NULL DEFAULT 1");
       // Preserve existing seat limits once; all future limits belong to the extra record.

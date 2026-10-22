@@ -1,6 +1,7 @@
 const express = require('express');
 const mysql = require('mysql2');
 const bcrypt = require('bcrypt');
+const { createAccountRouter, validateSession } = require('./routes/accounts');
 const session = require('express-session');
 const path = require('path');
 const fs = require('fs');
@@ -166,6 +167,10 @@ app.use(session({
   }
 }));
 
+app.use(validateSession(db));
+app.use("/api/accounts", createAccountRouter(db));
+app.get("/account", isAuthenticated, (req, res) => res.sendFile(path.join(__dirname, "public", "pages", "account.html")));
+
 const uploadDirectory = path.resolve(
   process.env.UPLOAD_DIR || path.join(__dirname, "uploads")
 );
@@ -222,6 +227,9 @@ app.get("/logout", (req, res) => {
 
 app.post('/login', loginLimiter, (req, res) => {
   const { username, password } = req.body;
+  if (typeof username !== 'string' || typeof password !== 'string' || username.length > 255 || Buffer.byteLength(password, 'utf8') > 72) {
+    return res.status(401).json({ success: false, message: 'Invalid credentials' });
+  }
 
   db.query('SELECT * FROM users WHERE username = ?', [username], (err, results) => {
     if (err) {
@@ -229,7 +237,7 @@ app.post('/login', loginLimiter, (req, res) => {
       return;
     }
 
-    if (results.length === 0) {
+    if (results.length === 0 || !results[0].is_active) {
       res.status(401).json({ success: false, message: 'Invalid credentials' });
       return;
     }
@@ -242,8 +250,15 @@ app.post('/login', loginLimiter, (req, res) => {
       }
 
       if (isMatch) {
-        req.session.userId = user.id;
-        res.json({ success: true });
+        req.session.regenerate(error => {
+          if (error) return res.status(500).json({ success: false, message: 'Could not start session' });
+          req.session.userId = user.id;
+          req.session.passwordVersion = Number(user.password_version || 0);
+          req.session.save(error => {
+            if (error) return res.status(500).json({ success: false, message: 'Could not save session' });
+            res.json({ success: true });
+          });
+        });
       } else {
         res.status(401).json({ success: false, message: 'Invalid credentials' });
       }
