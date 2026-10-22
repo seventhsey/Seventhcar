@@ -19,7 +19,7 @@
 
 @media (max-width: 767px) {
   body { padding-top: 90px; }
-  .container.mt-5, #mainContainer, .extras-container, .calendar-container { margin-top: 0 !important; }
+  .container.mt-5, #mainContainer, .extras-container, .calendar-container, #accountSettings { margin-top: 0 !important; }
   .container.pt-5 { padding-top: 0 !important; }
   h2 { font-size: 1.5rem; }
   .btn, .form-control, .form-control-sm { min-height: 44px; }
