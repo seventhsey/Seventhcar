@@ -60,3 +60,9 @@
   .ui-dialog-actions button { min-height: 44px; flex: 1; }
   .extras-container > .d-flex { flex-wrap: wrap; gap: 10px; }
 }
+
+/* Fail closed while the current role is loading; backend checks remain authoritative. */
+html:not([data-admin-role="owner"]) .owner-only,
+html:not([data-admin-role="owner"]) #addCarBtn,
+html:not([data-admin-role="owner"]) #removeCarBtn,
+html:not([data-admin-role="owner"]) #addExtraBtn { display: none !important; }

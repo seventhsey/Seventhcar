@@ -168,6 +168,7 @@ app.use(session({
 }));
 
 app.use(validateSession(db));
+app.use(require("./middleware/adminPermissions"));
 app.use("/api/accounts", createAccountRouter(db));
 app.get("/account", isAuthenticated, (req, res) => res.sendFile(path.join(__dirname, "public", "pages", "account.html")));
 

@@ -11,7 +11,7 @@
     <li class="nav-item">
       <a class="nav-link font-weight-bold" href="/calendar" style="font-size: 1.1rem;">Availability Calendar</a>
     </li>
-    <li class="nav-item">
+    <li class="nav-item owner-only">
       <a class="nav-link font-weight-bold" id="extrasLink" href="/extras" style="font-size: 1.1rem;">Extras</a>
     </li>
     <li class="nav-item"><a class="nav-link font-weight-bold" href="/account">Account</a></li>
@@ -28,4 +28,9 @@
   }
 
   navBarItems.innerHTML = adminLinks;
+  fetch('/api/accounts/me', { cache: 'no-store' }).then(response => {
+    if (!response.ok) throw new Error('Not authenticated');
+    return response.json();
+  }).then(user => { document.documentElement.dataset.adminRole = user.role; })
+    .catch(() => { document.documentElement.dataset.adminRole = 'unknown'; });
 })();

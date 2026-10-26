@@ -77,7 +77,7 @@ function renderCarAdminMode(container, car, unavailablePeriods = []) {
     <img src="${carImage}" alt="Car Image">
     <div class="plate-number">Plate Number: ${car.plate_number}</div>
     <div class="price">Price: €${car.price}</div>
-    <button class="btn btn-primary edit-btn" data-plate="${car.plate_number}">
+    <button class="btn btn-primary edit-btn owner-only" data-plate="${car.plate_number}">
       Edit
     </button>
     <button
@@ -280,13 +280,13 @@ function buildUnavailabilitySection(car, unavailablePeriods, container) {
       removeButton.addEventListener('click', async () => {
         const confirmed = await window.uiConfirm({
           title: 'Make this vehicle available?',
-          message: 'This removes the selected unavailable period. Customers may book the vehicle again if no reservation conflicts exist.',
+          message: 'This ends the selected unavailable period without deleting its record. Customers may book the vehicle again if no reservation conflicts exist.',
           confirmText: 'Make available',
         });
         if (!confirmed) return;
 
         try {
-          const response = await fetch(`/api/car-unavailability/${period.id}`, { method: 'DELETE' });
+          const response = await fetch(`/api/car-unavailability/${period.id}/reactivate`, { method: 'POST' });
           const result = await response.json();
           if (!response.ok) throw new Error(result.error || 'Could not remove unavailable period.');
           loadCars(container, 'admin');

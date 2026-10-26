@@ -30,7 +30,7 @@ module.exports = (db, upload) => {
     )
       AND plate_number NOT IN (
         SELECT plate_number FROM car_unavailability
-        WHERE start_at < TIMESTAMP(?, ?)
+        WHERE cancelled_at IS NULL AND start_at < TIMESTAMP(?, ?)
           AND (end_at IS NULL OR end_at > TIMESTAMP(?, ?))
       )
     ORDER BY car_name
@@ -90,7 +90,7 @@ module.exports = (db, upload) => {
          SELECT allDays.day, cu.plate_number
          FROM allDays
          JOIN car_unavailability cu
-           ON cu.start_at < DATE_ADD(allDays.day, INTERVAL 1 DAY)
+           ON cu.cancelled_at IS NULL AND cu.start_at < DATE_ADD(allDays.day, INTERVAL 1 DAY)
           AND (cu.end_at IS NULL OR cu.end_at > allDays.day)
       )
       SELECT 
@@ -260,7 +260,7 @@ module.exports = (db, upload) => {
       )
         AND plate_number NOT IN (
           SELECT plate_number FROM car_unavailability
-          WHERE start_at < TIMESTAMP(?, ?)
+          WHERE cancelled_at IS NULL AND start_at < TIMESTAMP(?, ?)
             AND (end_at IS NULL OR end_at > TIMESTAMP(?, ?))
         )
       ORDER BY car_name

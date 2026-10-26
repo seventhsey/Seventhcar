@@ -95,6 +95,7 @@ async function initializeSchema(pool) {
         INDEX idx_car_unavailability_period (plate_number, start_at, end_at)
       )`
     );
+    await ensureColumn(connection, "car_unavailability", "cancelled_at", "DATETIME NULL");
   } finally {
     if (hasLock) {
       try {
