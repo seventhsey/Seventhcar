@@ -11,7 +11,7 @@ module.exports = (db) => {
     try {
       const plateNumber = String(req.query.plate_number || "").trim();
       const params = [];
-      let where = "WHERE (cu.end_at IS NULL OR cu.end_at > NOW())";
+      let where = "WHERE cu.cancelled_at IS NULL AND (cu.end_at IS NULL OR cu.end_at > NOW())";
       if (plateNumber) {
         where += " AND cu.plate_number = ?";
         params.push(plateNumber);
@@ -85,7 +85,7 @@ module.exports = (db) => {
 
       const [overlaps] = await connection.query(
         `SELECT id FROM car_unavailability
-          WHERE plate_number = ?
+          WHERE cancelled_at IS NULL AND plate_number = ?
             AND start_at < COALESCE(?, '9999-12-31 23:59:59')
             AND (end_at IS NULL OR end_at > ?)
           LIMIT 1`,
@@ -127,6 +127,19 @@ module.exports = (db) => {
         }
       }
       if (connection) connection.release();
+    }
+  });
+
+  router.post('/:id/reactivate', async (req, res) => {
+    const id = Number(req.params.id);
+    if (!Number.isSafeInteger(id) || id < 1) return res.status(400).json({ error: 'Invalid unavailable period.' });
+    try {
+      const [result] = await db.promise().query('UPDATE car_unavailability SET cancelled_at = NOW() WHERE id = ? AND cancelled_at IS NULL', [id]);
+      if (!result.affectedRows) return res.status(404).json({ error: 'Active unavailable period not found.' });
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Could not reactivate vehicle:', error);
+      res.status(500).json({ error: 'Could not make the vehicle available.' });
     }
   });
 

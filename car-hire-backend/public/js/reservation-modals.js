@@ -295,7 +295,7 @@ document.addEventListener("DOMContentLoaded", function () {
       extra_id: parseInt(chk.value, 10),
       qty: 1,
     }));
-    const usePriceOverride = document.getElementById("enablePriceOverride").checked;
+    const usePriceOverride = document.documentElement.dataset.adminRole === "owner" && document.getElementById("enablePriceOverride").checked;
     const priceOverride = document.getElementById("editPriceOverride").value;
     const priceOverrideReason = document.getElementById("editPriceOverrideReason").value.trim();
 
@@ -323,6 +323,10 @@ document.addEventListener("DOMContentLoaded", function () {
       extras
     };
 
+    if (document.documentElement.dataset.adminRole !== 'owner') {
+      delete updatedReservation.price_override;
+      delete updatedReservation.price_override_reason;
+    }
     const method = reservationId ? "PUT" : "POST";
     const url = reservationId ? `/api/reservations/${reservationId}` : "/api/reservations";
 

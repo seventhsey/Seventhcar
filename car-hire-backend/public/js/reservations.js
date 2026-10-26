@@ -97,7 +97,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     const deleteButton = document.createElement("button");
     deleteButton.type = "button";
-    deleteButton.className = "btn btn-danger btn-sm delete-btn";
+    deleteButton.className = "btn btn-danger btn-sm delete-btn owner-only";
     deleteButton.dataset.id = String(reservation.id);
     deleteButton.textContent = "Delete";
     actionsCell.appendChild(deleteButton);

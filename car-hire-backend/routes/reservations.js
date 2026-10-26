@@ -52,7 +52,7 @@ module.exports = (db, { createReservationEditToken } = {}) => {
           SELECT allDays.day, cu.plate_number
           FROM allDays
           JOIN car_unavailability cu
-            ON cu.start_at < DATE_ADD(allDays.day, INTERVAL 1 DAY)
+            ON cu.cancelled_at IS NULL AND cu.start_at < DATE_ADD(allDays.day, INTERVAL 1 DAY)
            AND (cu.end_at IS NULL OR cu.end_at > allDays.day)
         )
         SELECT

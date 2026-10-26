@@ -83,7 +83,7 @@ module.exports = function validateReservationPricing(db) {
       const [unavailablePeriods] = await db.promise().query(
         `SELECT id, reason
            FROM car_unavailability
-          WHERE plate_number = ?
+          WHERE cancelled_at IS NULL AND plate_number = ?
             AND start_at < TIMESTAMP(?, ?)
             AND (end_at IS NULL OR end_at > TIMESTAMP(?, ?))
           LIMIT 1`,
@@ -108,9 +108,22 @@ module.exports = function validateReservationPricing(db) {
       req.body.extras = result.normalizedExtras;
       req.body.calculated_price = result.quote.total;
 
-      const submittedOverride = payload.price_override;
+      const isStaff = req.adminAccount?.account_role === 'admin';
+      let submittedOverride = payload.price_override;
+      if (isStaff) {
+        // Staff edits preserve any negotiated price previously set by the owner.
+        submittedOverride = null;
+        if (isUpdate) {
+          const [existing] = await db.promise().query(
+            'SELECT price_override, price_override_reason FROM reservations WHERE id = ?',
+            [excludedReservationId]
+          );
+          submittedOverride = existing[0]?.price_override ?? null;
+          payload.price_override_reason = existing[0]?.price_override_reason || '';
+        }
+      }
       const hasAdminOverride =
-        Boolean(req.session.userId) &&
+        (req.adminAccount?.account_role === "owner" || isStaff) &&
         submittedOverride !== undefined &&
         submittedOverride !== null &&
         submittedOverride !== "";

@@ -46,8 +46,8 @@ document.addEventListener("DOMContentLoaded", function() {
           <p>${extra.description || ""}</p>
           <p><strong>Limit per booking:</strong> ${Number(extra.max_quantity) || 1}</p>
           <p><strong>Charge:</strong> ${extra.charge_type === "once" ? "One-time charge" : "Daily charge"}</p>
-          <button class="btn btn-sm btn-primary mr-2" data-id="${extra.id}">Edit</button>
-          <button class="btn btn-sm btn-danger" data-id="${extra.id}">Delete</button>
+          <button class="btn btn-sm btn-primary mr-2 owner-only" data-id="${extra.id}">Edit</button>
+          <button class="btn btn-sm btn-danger owner-only" data-id="${extra.id}">Delete</button>
         </div>
       `;
 
