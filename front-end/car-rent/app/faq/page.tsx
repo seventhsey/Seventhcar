@@ -20,7 +20,7 @@ const faqs = [
   {
     question: "What are your rental rates and payment options?",
     answer:
-      "Rates depend on the selected vehicle, rental length, protection plan, and extras. The full calculated total is shown before you submit the reservation. Payment is currently made on arrival.",
+      "Rates depend on the vehicle, rental length, protection and extras. Your total appears before submission. Payment is due on arrival. Cash and bank transfer are accepted; card payments carry a 3% commission and PayPal a 5% commission. Contact us to arrange payment. Online card checkout is not currently available.",
   },
   {
     question: "Is insurance included in the rental price?",
@@ -30,17 +30,17 @@ const faqs = [
   {
     question: "Are there any additional or hidden fees?",
     answer:
-      "No, our pricing is fully transparent with no hidden charges.",
+      "The booking summary itemises your rental, protection and selected extras, including applicable pickup and drop-off charges. Payment-method commissions and charges for issues such as extensive cleaning are separate; contact us if you need clarification before booking.",
   },
   {
     question: "What is your cancellation policy?",
     answer:
-      "Contact us as early as possible if your plans change. Our team will confirm the applicable cancellation conditions for your reservation.",
+      "Cancellation is free of charge. Call or WhatsApp us to let us know your plans have changed.",
   },
   {
     question: "Do you offer airport or hotel delivery?",
     answer:
-      "Yes, we provide delivery to both airports and hotels, as well as flexible return locations.",
+      "Choose Mahé Airport, Cat Coco’s Jetty or Other for pickup and return. For a hotel or another location, select Other and provide the address in your reservation notes. Applicable location charges appear in your booking summary.",
   },
   {
     question: "Where can I drive the rental car?",
@@ -55,17 +55,17 @@ const faqs = [
   {
     question: "Can I extend my rental period?",
     answer:
-      "Yes, extensions are possible anytime — just contact us.",
+      "Contact us to request an extension. We will confirm vehicle availability and the revised rental total before extending your booking.",
   },
   {
     question: "What happens if I return the car late?",
     answer:
-      "Up to 1–2 hours delay is acceptable. Please inform us in advance if you expect delays.",
+      "Call or message us if you expect to be late. A delay of up to 1–2 hours can be accommodated without extra rental charges when arranged with our team.",
   },
   {
     question: "Can I add an additional driver?",
     answer:
-      "Additional drivers may be permitted if they meet the licence and age requirements. Please include the request in your reservation notes so our team can confirm it.",
+      "A second driver costs €5 per day and must be at least 21 with one year of driving experience. Bring their valid driving licence and ID or passport. Request this in your booking notes.",
   },
   {
     question: "Do you provide child seats?",
@@ -75,12 +75,12 @@ const faqs = [
   {
     question: "What should I do in case of a breakdown?",
     answer:
-      "Contact us immediately — we provide 24/7 support.",
+      "Call or WhatsApp +248 2502815 for assistance. Our team is available 24/7.",
   },
   {
     question: "Are there driving rules in Seychelles?",
     answer:
-      "Drive on the left side. Average speed is 25–30 km/h. Seat belts are mandatory.",
+      "Drive on the left, wear seat belts and avoid using your phone while driving. Allow extra time for narrow roads, bends and hills, and follow posted road signs.",
   },
   {
     question: "What are speed limits in Seychelles?",
@@ -90,12 +90,32 @@ const faqs = [
   {
     question: "Which islands do you operate in?",
     answer:
-      "Our online booking locations currently focus on Mahé. Contact us before booking if you need arrangements elsewhere.",
+      "Our fleet and online bookings are for Mahé Island. Contact us before making plans for another island.",
   },
   {
     question: "Can I rent a car for 1 day?",
     answer:
       "The booking system accepts one-day rentals. The displayed daily rate is adjusted according to the rental length.",
+  },
+  {
+    question: "Is there a mileage limit?",
+    answer: "Unlimited mileage is included.",
+  },
+  {
+    question: "What happens if I return the car with sand inside?",
+    answer: "A little sand on the mats is fine. Extensive interior cleaning costs €40.",
+  },
+  {
+    question: "Can I change my booking or return the car earlier?",
+    answer: "There is no booking-amendment fee. Use Manage Reservation to request changes before your rental, or contact us for extensions and early returns. Changes to dates, vehicle, protection or extras may change the rental total and require our approval.",
+  },
+  {
+    question: "Why is the daily rate higher for a short rental?",
+    answer: "The rental-length pricing tiers apply higher daily rates to short bookings and lower rates to longer bookings. Enter your dates to see the calculated quote.",
+  },
+  {
+    question: "Do you offer weekly or monthly rental discounts?",
+    answer: "Longer rentals benefit from lower pricing tiers. The booking system applies the appropriate rental-length rate automatically. Contact us for a custom quotation.",
   },
 ];
 
@@ -119,6 +139,10 @@ export default function FAQPage() {
             <div key={index} className="py-5">
               <button
                 className="w-full flex justify-between items-center text-left text-lg font-medium hover:text-blue-400 transition"
+                type="button"
+                aria-expanded={openIndex === index}
+                aria-controls={`faq-answer-${index}`}
+                id={`faq-question-${index}`}
                 onClick={() =>
                   setOpenIndex(openIndex === index ? null : index)
                 }
@@ -130,6 +154,10 @@ export default function FAQPage() {
               </button>
 
               <div
+                id={`faq-answer-${index}`}
+                role="region"
+                aria-labelledby={`faq-question-${index}`}
+                aria-hidden={openIndex !== index}
                 className={`overflow-hidden transition-all duration-300 ${
                   openIndex === index ? "max-h-96 mt-4" : "max-h-0"
                 }`}
