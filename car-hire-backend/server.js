@@ -269,6 +269,9 @@ app.post('/login', loginLimiter, (req, res) => {
 
 function isAuthenticated(req, res, next) {
   if (req.session.userId) return next();
+  if ((req.method === "GET" || req.method === "HEAD") && !/^\/api(?:\/|$)/i.test(req.path)) {
+    return res.redirect("/login");
+  }
   return res.status(401).json({ error: "Authentication required." });
 }
 
