@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "./SectionLink";
 import { ArrowRight, Compass, LifeBuoy, ClipboardCheck } from "lucide-react";
 
 const resources = [
