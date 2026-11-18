@@ -1,7 +1,7 @@
 'use client'
 import { Menu } from "lucide-react";
 import React, { useState } from "react";
-import Link from "next/link";
+import Link from "./SectionLink";
 
 const links = [
   { label: "Home", path: "/" },
